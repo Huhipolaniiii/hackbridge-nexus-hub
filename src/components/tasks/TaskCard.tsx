@@ -48,7 +48,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
       className="hack-card cursor-pointer" 
       onClick={() => navigate(`/tasks/${task.id}`)}
     >
-      <div className="absolute top-3 right-3 flex flex-wrap justify-end gap-2">
+      <div className="absolute top-3 right-3 flex flex-wrap justify-end gap-2 max-w-[70%]">
         <Badge variant="secondary" className={getDifficultyColor(task.difficulty)}>
           {task.difficulty}
         </Badge>
