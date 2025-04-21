@@ -14,7 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -27,9 +27,23 @@ const Login = () => {
     // Simulate login API request
     setTimeout(() => {
       setIsLoading(false);
+      
+      // For demo, we'll assume company/hacker based on email domain
+      const isCompany = email.includes('company') || email.includes('business');
+      
+      if (isCompany) {
+        localStorage.setItem('userRole', 'company');
+        localStorage.setItem('userName', 'ТехноЩит');
+        localStorage.setItem('userEmail', email);
+      } else {
+        localStorage.setItem('userRole', 'hacker');
+        localStorage.setItem('userName', 'Алексей Иванов');
+        localStorage.setItem('userEmail', email);
+      }
+      
       toast.success('Вход выполнен успешно');
       navigate('/');
-    }, 1500);
+    }, 1000);
   };
 
   return (
@@ -56,7 +70,7 @@ const Login = () => {
               Введите свои данные для входа в систему
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

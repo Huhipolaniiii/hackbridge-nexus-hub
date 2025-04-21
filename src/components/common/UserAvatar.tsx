@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 const UserAvatar = () => {
-  // In a real app, this would come from auth context
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState<'hacker' | 'company' | null>(null);
   const [userName, setUserName] = useState('');
@@ -25,18 +24,21 @@ const UserAvatar = () => {
   useEffect(() => {
     // Check local storage for user login status
     const userRole = localStorage.getItem('userRole');
+    const storedUserName = localStorage.getItem('userName');
+    const storedUserEmail = localStorage.getItem('userEmail');
+    
     if (userRole) {
       setIsLoggedIn(true);
       setUserType(userRole as 'hacker' | 'company');
       
-      // Set mock user details based on role
-      if (userRole === 'company') {
-        setUserName('ТехноЩит');
-        setUserEmail('info@techshield.ru');
-      } else {
-        setUserName('Алексей Иванов');
-        setUserEmail('ivanov@example.com');
-      }
+      // Set user details from localStorage
+      setUserName(storedUserName || '');
+      setUserEmail(storedUserEmail || '');
+    } else {
+      setIsLoggedIn(false);
+      setUserType(null);
+      setUserName('');
+      setUserEmail('');
     }
   }, []);
   
@@ -44,7 +46,10 @@ const UserAvatar = () => {
     setIsLoggedIn(false);
     setUserType(null);
     localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
     toast.success('Вы успешно вышли из системы');
+    navigate('/');
   };
   
   if (!isLoggedIn) {
@@ -69,6 +74,15 @@ const UserAvatar = () => {
     );
   }
 
+  const getInitials = (name: string) => {
+    if (!name) return '';
+    const words = name.split(' ');
+    if (words.length >= 2) {
+      return `${words[0][0]}${words[1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -76,7 +90,7 @@ const UserAvatar = () => {
           <Avatar className="h-8 w-8 cursor-pointer">
             <AvatarImage src="/placeholder.svg" alt={userName} />
             <AvatarFallback className="bg-muted">
-              {userType === 'company' ? 'ТЩ' : 'АИ'}
+              {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
         </Button>

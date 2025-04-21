@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Card,
@@ -68,11 +69,14 @@ const Register = () => {
     // Simulate API request
     setTimeout(() => {
       setIsLoading(false);
-      // Save user type in localStorage for demo
+      // Save user info in localStorage for demo
       localStorage.setItem('userRole', 'hacker');
+      localStorage.setItem('userName', hackerData.username);
+      localStorage.setItem('userEmail', hackerData.email);
+      
       toast.success('Регистрация успешно завершена!');
       navigate('/');
-    }, 1500);
+    }, 1000);
   };
   
   const handleCompanySubmit = async (e: React.FormEvent) => {
@@ -94,11 +98,14 @@ const Register = () => {
     // Simulate API request
     setTimeout(() => {
       setIsLoading(false);
-      // Save user type in localStorage for demo
+      // Save user info in localStorage for demo
       localStorage.setItem('userRole', 'company');
+      localStorage.setItem('userName', companyData.companyName);
+      localStorage.setItem('userEmail', companyData.email);
+      
       toast.success('Регистрация компании успешно завершена!');
       navigate('/');
-    }, 1500);
+    }, 1000);
   };
 
   return (
@@ -257,10 +264,9 @@ const Register = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="description">Описание компании</Label>
-                    <Input
+                    <Textarea
                       id="description"
                       name="description"
-                      as="textarea"
                       placeholder="Краткое описание вашей компании..."
                       value={companyData.description}
                       onChange={handleCompanyInputChange}

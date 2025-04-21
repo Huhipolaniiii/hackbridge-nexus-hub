@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -14,18 +14,37 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
+  useEffect(() => {
+    // Check login status whenever component mounts or location changes
+    const storedUserRole = localStorage.getItem('userRole');
+    setIsLoggedIn(!!storedUserRole);
+    setUserRole(storedUserRole);
+  }, [location]);
+  
   const isActive = (path: string): boolean => {
     return location.pathname === path;
   };
 
-  const menuItems = [
+  // Base menu items always shown
+  const baseMenuItems = [
     { path: '/', label: 'Главная', icon: Home },
     { path: '/courses', label: 'Курсы', icon: BookOpen },
     { path: '/tasks', label: 'Задания', icon: Briefcase },
+  ];
+  
+  // Auth-required menu items
+  const authMenuItems = [
     { path: '/cart', label: 'Корзина', icon: ShoppingCart },
     { path: '/profile', label: 'Профиль', icon: User },
   ];
+  
+  // Combined menu items based on auth status
+  const menuItems = isLoggedIn 
+    ? [...baseMenuItems, ...authMenuItems]
+    : baseMenuItems;
 
   return (
     <div className="min-h-screen flex flex-col bg-hack-darker">
@@ -51,11 +70,13 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/cart">
-                <ShoppingCart className="h-5 w-5" />
-              </Link>
-            </Button>
+            {isLoggedIn && (
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/cart">
+                  <ShoppingCart className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
             <UserAvatar />
           </div>
         </div>

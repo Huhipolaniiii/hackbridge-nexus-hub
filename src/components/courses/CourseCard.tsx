@@ -18,9 +18,42 @@ const CourseCard = ({ course }: CourseCardProps) => {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Check if user is logged in
+    const userRole = localStorage.getItem('userRole');
+    if (!userRole) {
+      toast.error('Необходимо войти в аккаунт для добавления курса в корзину');
+      navigate('/login');
+      return;
+    }
+    
     setIsAddingToCart(true);
     
-    // Simulate adding to cart
+    // Get existing cart from localStorage
+    const cartString = localStorage.getItem('userCart');
+    let cart = cartString ? JSON.parse(cartString) : [];
+    
+    // Check if course is already in cart
+    const isInCart = cart.some((item: any) => item.id === course.id);
+    
+    if (isInCart) {
+      toast.info('Этот курс уже в корзине');
+      setIsAddingToCart(false);
+      return;
+    }
+    
+    // Add course to cart
+    cart.push({
+      id: course.id,
+      title: course.title,
+      price: course.price,
+      type: 'course'
+    });
+    
+    // Save updated cart
+    localStorage.setItem('userCart', JSON.stringify(cart));
+    
+    // Show success message
     setTimeout(() => {
       setIsAddingToCart(false);
       toast.success('Курс добавлен в корзину');
@@ -86,7 +119,10 @@ const CourseCard = ({ course }: CourseCardProps) => {
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => navigate(`/courses/${course.id}`)}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/courses/${course.id}`);
+          }}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

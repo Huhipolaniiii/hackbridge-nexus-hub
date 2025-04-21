@@ -9,10 +9,13 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import Courses from "./pages/Courses";
+import CourseDetails from "./pages/CourseDetails";
 import Tasks from "./pages/Tasks";
+import TaskDetails from "./pages/TaskDetails";
 import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
 import PostTask from "./pages/PostTask";
+import AuthGuard from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
 
@@ -27,10 +30,29 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/courses" element={<Courses />} />
+          <Route path="/courses/:id" element={<CourseDetails />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/tasks/:id" element={<TaskDetails />} />
           <Route path="/tasks/post" element={<PostTask />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/profile" element={<Profile />} />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/cart" 
+            element={
+              <AuthGuard>
+                <Cart />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <AuthGuard>
+                <Profile />
+              </AuthGuard>
+            } 
+          />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
