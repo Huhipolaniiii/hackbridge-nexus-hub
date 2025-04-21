@@ -10,29 +10,38 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { courses as allCourses, simulateApiRequest } from '@/services/mockData';
+import { simulateApiRequest, courses as allCourses } from '@/services/mockData';
 import { Course } from '@/types/course';
 import { toast } from 'sonner';
 import { ShoppingCart, Trash, CreditCard } from 'lucide-react';
 
+interface CartItem {
+  id: string;
+  title: string;
+  price: number;
+  type: string;
+  imageUrl?: string;
+}
+
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<Course[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const fetchCartItems = async () => {
       setIsLoading(true);
       try {
-        // In a real app, you'd fetch from an API
-        // For demo, we'll just mark some courses as in cart
-        const mockCartItems = allCourses
-          .slice(0, 2)
-          .map(course => ({ ...course, inCart: true }));
-          
-        await simulateApiRequest(mockCartItems);
-        setCartItems(mockCartItems);
+        // Get cart from localStorage
+        const cartString = localStorage.getItem('userCart');
+        const userCart = cartString ? JSON.parse(cartString) : [];
+        
+        // Simulate a small delay for loading effect
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        setCartItems(userCart);
       } catch (error) {
         console.error('Error fetching cart items:', error);
+        toast.error('Ошибка при загрузке корзины');
       } finally {
         setIsLoading(false);
       }
@@ -41,18 +50,25 @@ const Cart = () => {
     fetchCartItems();
   }, []);
   
-  const handleRemoveFromCart = (courseId: string) => {
-    setCartItems(cartItems.filter(course => course.id !== courseId));
-    toast.success('Курс удален из корзины');
+  const handleRemoveFromCart = (itemId: string) => {
+    // Remove from state
+    const updatedCart = cartItems.filter(item => item.id !== itemId);
+    setCartItems(updatedCart);
+    
+    // Update localStorage
+    localStorage.setItem('userCart', JSON.stringify(updatedCart));
+    
+    toast.success('Товар удален из корзины');
   };
   
   const handleCheckout = () => {
     toast.success('Покупка успешно совершена!');
     setCartItems([]);
+    localStorage.setItem('userCart', JSON.stringify([]));
   };
   
   const calculateTotal = () => {
-    return cartItems.reduce((total, course) => total + course.price, 0);
+    return cartItems.reduce((total, item) => total + item.price, 0);
   };
   
   return (
@@ -74,34 +90,34 @@ const Cart = () => {
         ) : cartItems.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map(course => (
-                <Card key={course.id} className="hack-card overflow-hidden">
+              {cartItems.map(item => (
+                <Card key={item.id} className="hack-card overflow-hidden">
                   <div className="flex flex-col md:flex-row">
                     <div 
                       className="w-full md:w-48 h-40 md:h-auto bg-cover bg-center" 
-                      style={{ backgroundImage: `url(${course.imageUrl})` }}
+                      style={{ backgroundImage: `url(${item.imageUrl || '/placeholder.svg'})` }}
                     />
                     <div className="flex-1 flex flex-col">
                       <CardHeader>
-                        <CardTitle className="text-lg font-semibold">{course.title}</CardTitle>
+                        <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
                         <CardDescription className="line-clamp-2">
-                          {course.description}
+                          {item.type === 'course' ? 'Курс' : 'Задание'}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="flex-1">
                         <div className="text-sm text-muted-foreground">
-                          {course.lessonsCount} уроков • {course.difficulty}
+                          {item.type === 'course' ? 'Доступ навсегда' : 'Единоразовая оплата'}
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-between items-center border-t border-border pt-3">
                         <div className="font-bold text-hack-green">
-                          {course.price} ₽
+                          {item.price} ₽
                         </div>
                         <Button 
                           variant="destructive" 
                           size="sm"
                           className="gap-2"
-                          onClick={() => handleRemoveFromCart(course.id)}
+                          onClick={() => handleRemoveFromCart(item.id)}
                         >
                           <Trash className="h-4 w-4" />
                           Удалить
@@ -120,7 +136,7 @@ const Cart = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
-                    <span>Всего курсов:</span>
+                    <span>Всего товаров:</span>
                     <span>{cartItems.length}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg">

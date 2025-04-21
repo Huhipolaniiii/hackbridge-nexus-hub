@@ -26,7 +26,7 @@ const CourseDetails = () => {
       try {
         // Simulate API request
         const allCourses = await simulateApiRequest(courses);
-        const foundCourse = allCourses.find(c => c.id === parseInt(id || '0'));
+        const foundCourse = allCourses.find(c => c.id === id);
         
         if (foundCourse) {
           setCourse(foundCourse);
@@ -75,7 +75,8 @@ const CourseDetails = () => {
         id: course.id,
         title: course.title,
         price: course.price,
-        type: 'course'
+        type: 'course',
+        imageUrl: course.imageUrl
       });
       
       // Save updated cart
@@ -142,6 +143,9 @@ const CourseDetails = () => {
     );
   }
 
+  // Use a default duration if not provided in the course object
+  const courseDuration = "6 часов";
+
   return (
     <MainLayout>
       <div className="animate-fade-in space-y-6">
@@ -172,11 +176,11 @@ const CourseDetails = () => {
               </Badge>
               <Badge variant="outline" className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {course.duration || '6 часов'}
+                {courseDuration}
               </Badge>
               <Badge variant="outline" className="flex items-center gap-1">
                 <User className="h-3.5 w-3.5" />
-                {course.studentsCount} студентов
+                {course.studentsCount || 0} студентов
               </Badge>
             </div>
           </div>
@@ -340,7 +344,7 @@ const CourseDetails = () => {
             <div>
               <h3 className="text-xl font-semibold mb-4">Содержание курса</h3>
               <p className="text-muted-foreground mb-6">
-                {course.lessonsCount} уроков • {course.duration || '6 часов'} общей продолжительности
+                {course.lessonsCount} уроков • {courseDuration} общей продолжительности
               </p>
               
               <div className="space-y-4">

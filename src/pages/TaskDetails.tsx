@@ -29,7 +29,8 @@ const TaskDetails = () => {
       try {
         // Simulate API request
         const allTasks = await simulateApiRequest(tasks);
-        const foundTask = allTasks.find(t => t.id === parseInt(id || '0'));
+        // Convert id to string for comparison since params.id is a string
+        const foundTask = allTasks.find(t => t.id.toString() === id);
         
         if (foundTask) {
           setTask(foundTask);
