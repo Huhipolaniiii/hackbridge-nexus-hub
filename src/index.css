@@ -5,34 +5,25 @@
 
 @layer base {
   :root {
-    --background: 225 25% 7%;
-    --foreground: 210 40% 98%;
-
-    --card: 228 10% 12%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 228 10% 12%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 196 100% 50%;
-    --primary-foreground: 0 0% 0%;
-
-    --secondary: 155 100% 50%;
-    --secondary-foreground: 0 0% 0%;
-
-    --muted: 228 9% 15%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 264 80% 61%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 228 10% 16%;
-    --input: 228 10% 16%;
-    --ring: 196 100% 50%;
-
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 180 100% 50%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
     --radius: 0.5rem;
   }
 }
@@ -41,32 +32,115 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-hack-dark text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground;
   }
 }
 
 @layer components {
   .hack-card {
-    @apply bg-hack-card-bg border border-border rounded-md overflow-hidden relative transition-all duration-300 hover:shadow-md hover:shadow-hack-blue/20;
+    @apply bg-hack-dark border border-border/40 rounded-lg hover:border-hack-blue/50 transition-all duration-300 shadow-md hover:shadow-hack-blue/20;
   }
   
   .hack-gradient-text {
-    @apply bg-gradient-to-r from-hack-blue to-hack-green bg-clip-text text-transparent;
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-hack-blue to-hack-green;
+  }
+}
+
+@layer utilities {
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+  .animation-delay-700 {
+    animation-delay: 700ms;
+  }
+  .animation-delay-800 {
+    animation-delay: 800ms;
   }
   
-  .hack-glow {
-    @apply relative;
+  .hover-scale {
+    @apply hover:scale-105 transition-transform duration-300;
   }
-  
-  .hack-glow::after {
-    @apply content-[''] absolute inset-0 rounded-md opacity-0 transition-opacity duration-300;
-    box-shadow: 0 0 15px 2px theme('colors.hack.blue');
+}
+
+:root {
+  --hack-darker: #0d1117;
+  --hack-dark: #161b22;
+  --hack-blue: #58a6ff;
+  --hack-green: #3fb950;
+  --hack-purple: #8957e5;
+  --hack-red: #f85149;
+  --hack-yellow: #d29922;
+}
+
+@layer utilities {
+  .bg-hack-darker {
+    background-color: var(--hack-darker);
   }
-  
-  .hack-glow:hover::after {
-    @apply opacity-100;
+  .bg-hack-dark {
+    background-color: var(--hack-dark);
+  }
+  .text-hack-blue {
+    color: var(--hack-blue);
+  }
+  .text-hack-green {
+    color: var(--hack-green);
+  }
+  .text-hack-purple {
+    color: var(--hack-purple);
+  }
+  .text-hack-red {
+    color: var(--hack-red);
+  }
+  .text-hack-yellow {
+    color: var(--hack-yellow);
+  }
+  .bg-hack-blue {
+    background-color: var(--hack-blue);
+  }
+  .bg-hack-green {
+    background-color: var(--hack-green);
+  }
+  .bg-hack-purple {
+    background-color: var(--hack-purple);
+  }
+  .bg-hack-red {
+    background-color: var(--hack-red);
+  }
+  .bg-hack-yellow {
+    background-color: var(--hack-yellow);
+  }
+  .border-hack-blue {
+    border-color: var(--hack-blue);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
