@@ -16,6 +16,7 @@ import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
 import PostTask from "./pages/PostTask";
 import AuthGuard from "./components/auth/AuthGuard";
+import ProfileSettings from "./pages/ProfileSettings";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <Profile />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/profile/settings" 
+            element={
+              <AuthGuard>
+                <ProfileSettings />
               </AuthGuard>
             } 
           />

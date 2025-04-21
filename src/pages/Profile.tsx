@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { User } from '@/types/user';
 import { Course } from '@/types/course';
 import { Task } from '@/types/task';
-import { simulateApiRequest, users, courses, tasks } from '@/services/mockData';
+import { simulateApiRequest, courses, tasks } from '@/services/mockData';
 import { User as UserIcon, BookOpen, Award, CreditCard, Settings } from 'lucide-react';
 
 const Profile = () => {
@@ -27,40 +27,52 @@ const Profile = () => {
       try {
         // Check if we have a company account
         const userRole = localStorage.getItem('userRole');
+        const userName = localStorage.getItem('userName') || '';
+        const userEmail = localStorage.getItem('userEmail') || '';
+        
         setIsCompanyAccount(userRole === 'company');
         
-        // Fetch user data (mock)
+        // Create user data based on local storage
         if (userRole === 'company') {
-          // Mock company data
+          // Company data
           const companyData = {
             id: 'company1',
-            username: 'ТехноЩит',
-            email: 'info@techshield.ru',
-            role: 'company',
-            avatarUrl: '',
-            rating: 4.8,
-            balance: 150000,
-            completedTasks: 15,
+            username: userName,
+            email: userEmail,
+            role: 'company' as 'company',
+            avatarUrl: '/placeholder.svg',
+            rating: 0,
+            balance: 0,
+            completedTasks: 0,
             skills: [],
             purchasedCourses: [],
-          } as User;
+          };
           
           await simulateApiRequest(companyData);
           setUser(companyData);
         } else {
-          // Fetch regular user data
-          const userData = await simulateApiRequest(users[0]);
+          // Regular user data
+          const userData = {
+            id: 'user1',
+            username: userName,
+            email: userEmail,
+            role: 'hacker' as 'hacker',
+            avatarUrl: '/placeholder.svg',
+            rating: 0,
+            balance: 0,
+            completedTasks: 0,
+            skills: [],
+            purchasedCourses: [],
+          };
+          
+          await simulateApiRequest(userData);
           setUser(userData);
           
-          // Fetch purchased courses
-          const userCourses = courses.filter(course => 
-            userData.purchasedCourses.includes(course.id)
-          );
-          setPurchasedCourses(userCourses);
+          // Initialize empty courses
+          setPurchasedCourses([]);
           
-          // Mock completed tasks data
-          const userTasks = tasks.slice(0, 2);
-          setCompletedTasks(userTasks);
+          // Initialize empty tasks
+          setCompletedTasks([]);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -83,6 +95,16 @@ const Profile = () => {
     );
   }
 
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    if (!name) return '';
+    const words = name.split(' ');
+    if (words.length >= 2) {
+      return `${words[0][0]}${words[1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <MainLayout>
       <div className="animate-fade-in space-y-6">
@@ -94,12 +116,12 @@ const Profile = () => {
               <Avatar className="h-24 w-24 border-4 border-hack-darker">
                 <AvatarImage src={user.avatarUrl} />
                 <AvatarFallback className="bg-hack-dark text-xl">
-                  {isCompanyAccount ? 'ТЩ' : 'АИ'}
+                  {getInitials(user.username)}
                 </AvatarFallback>
               </Avatar>
               <div className="text-center sm:text-left mt-4 sm:mt-0 sm:mb-2 flex-1">
                 <h1 className="text-2xl font-bold">
-                  {isCompanyAccount ? 'ТехноЩит' : 'Алексей Иванов'}
+                  {user.username}
                 </h1>
                 <p className="text-muted-foreground">
                   {user.email}
@@ -169,7 +191,7 @@ const Profile = () => {
                         <div className="flex flex-row h-32">
                           <div 
                             className="w-32 bg-cover bg-center" 
-                            style={{ backgroundImage: `url(${course.imageUrl})` }}
+                            style={{ backgroundImage: `url(${course.imageUrl || '/placeholder.svg'})` }}
                           />
                           <div className="flex-1 p-4 flex flex-col justify-between">
                             <div>
@@ -179,8 +201,8 @@ const Profile = () => {
                               </p>
                             </div>
                             <div className="mt-2">
-                              <p className="text-xs text-muted-foreground mb-1">Прогресс: 35%</p>
-                              <Progress value={35} className="h-2" />
+                              <p className="text-xs text-muted-foreground mb-1">Прогресс: 0%</p>
+                              <Progress value={0} className="h-2" />
                             </div>
                           </div>
                         </div>
@@ -210,23 +232,35 @@ const Profile = () => {
               <CardContent>
                 {isCompanyAccount ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {tasks.filter(task => task.companyName === 'ТехноЩит').map(task => (
-                      <Card key={task.id} className="hack-card hover-scale cursor-pointer">
-                        <CardContent className="p-4">
-                          <Badge className="mb-2 bg-blue-500/20 text-blue-500 hover:bg-blue-500/30">
-                            {task.category}
-                          </Badge>
-                          <h3 className="font-semibold">{task.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                            {task.description}
-                          </p>
-                          <div className="flex justify-between items-center mt-3">
-                            <Badge variant="outline">{task.status}</Badge>
-                            <span className="font-bold text-hack-green">{task.reward} ₽</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {tasks.filter(task => task.companyName === user.username).length > 0 ? (
+                      tasks.filter(task => task.companyName === user.username).map(task => (
+                        <Card key={task.id} className="hack-card hover-scale cursor-pointer">
+                          <CardContent className="p-4">
+                            <Badge className="mb-2 bg-blue-500/20 text-blue-500 hover:bg-blue-500/30">
+                              {task.category}
+                            </Badge>
+                            <h3 className="font-semibold">{task.title}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                              {task.description}
+                            </p>
+                            <div className="flex justify-between items-center mt-3">
+                              <Badge variant="outline">{task.status}</Badge>
+                              <span className="font-bold text-hack-green">{task.reward} ₽</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 col-span-2">
+                        <p className="text-muted-foreground">У вас пока нет созданных заданий</p>
+                        <Button 
+                          className="mt-4 bg-hack-blue hover:bg-hack-blue/80 text-black"
+                          onClick={() => window.location.href = '/tasks/post'}
+                        >
+                          Создать задание
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-6">
@@ -314,7 +348,7 @@ const Profile = () => {
                         {isCompanyAccount ? 'Выплачено' : 'Заработано'}
                       </h3>
                       <p className="text-3xl font-bold text-hack-blue">
-                        {isCompanyAccount ? '75 000' : '32 000'} ₽
+                        0 ₽
                       </p>
                     </CardContent>
                   </Card>
@@ -325,7 +359,7 @@ const Profile = () => {
                         {isCompanyAccount ? 'Активных заданий' : 'Приобретено курсов'}
                       </h3>
                       <p className="text-3xl font-bold text-hack-blue">
-                        {isCompanyAccount ? '2' : purchasedCourses.length}
+                        {isCompanyAccount ? '0' : purchasedCourses.length}
                       </p>
                     </CardContent>
                   </Card>
@@ -377,15 +411,19 @@ const HackerOverview = ({ user }: { user: User }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {user.skills.map((skill) => (
-              <div key={skill.name} className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="font-medium">{skill.name}</span>
-                  <span className="text-muted-foreground">{skill.level}/10</span>
+            {user.skills && user.skills.length > 0 ? (
+              user.skills.map((skill) => (
+                <div key={skill.name} className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium">{skill.name}</span>
+                    <span className="text-muted-foreground">{skill.level}/10</span>
+                  </div>
+                  <Progress value={skill.level * 10} className="h-2" />
                 </div>
-                <Progress value={skill.level * 10} className="h-2" />
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-muted-foreground text-center py-4">У вас пока нет навыков</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -428,24 +466,8 @@ const CompanyOverview = ({ user }: { user: User }) => {
             <Card className="hack-card">
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-3">Категории заданий</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Web</span>
-                    <span>60%</span>
-                  </div>
-                  <Progress value={60} className="h-2" />
-                  
-                  <div className="flex justify-between mt-2">
-                    <span>Mobile</span>
-                    <span>20%</span>
-                  </div>
-                  <Progress value={20} className="h-2" />
-                  
-                  <div className="flex justify-between mt-2">
-                    <span>OSINT</span>
-                    <span>20%</span>
-                  </div>
-                  <Progress value={20} className="h-2" />
+                <div className="text-muted-foreground text-center py-4">
+                  Нет данных по категориям заданий
                 </div>
               </CardContent>
             </Card>
@@ -453,28 +475,8 @@ const CompanyOverview = ({ user }: { user: User }) => {
             <Card className="hack-card">
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-3">Эффективность</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between">
-                      <span>Успешные решения</span>
-                      <span>85%</span>
-                    </div>
-                    <Progress value={85} className="h-2 mt-2" />
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between">
-                      <span>Средний срок решения</span>
-                      <span>5 дней</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between">
-                      <span>Активных заданий</span>
-                      <span>2</span>
-                    </div>
-                  </div>
+                <div className="text-muted-foreground text-center py-4">
+                  Статистика будет доступна после размещения заданий
                 </div>
               </CardContent>
             </Card>

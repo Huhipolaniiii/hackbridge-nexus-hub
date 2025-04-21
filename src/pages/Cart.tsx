@@ -20,7 +20,7 @@ interface CartItem {
   title: string;
   price: number;
   type: string;
-  imageUrl?: string;
+  imageUrl: string;
 }
 
 const Cart = () => {
@@ -35,10 +35,21 @@ const Cart = () => {
         const cartString = localStorage.getItem('userCart');
         const userCart = cartString ? JSON.parse(cartString) : [];
         
+        // Ensure all cart items have a valid imageUrl
+        const updatedCart = userCart.map((item: CartItem) => {
+          if (!item.imageUrl) {
+            return {
+              ...item,
+              imageUrl: '/placeholder.svg'
+            };
+          }
+          return item;
+        });
+        
         // Simulate a small delay for loading effect
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        setCartItems(userCart);
+        setCartItems(updatedCart);
       } catch (error) {
         console.error('Error fetching cart items:', error);
         toast.error('Ошибка при загрузке корзины');
