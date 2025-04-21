@@ -21,8 +21,8 @@ const Tasks = () => {
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [difficultyFilter, setDifficultyFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
   const [sortOption, setSortOption] = useState<string>('newest');
   const [isCompanyAccount, setIsCompanyAccount] = useState(false);
   
@@ -61,12 +61,12 @@ const Tasks = () => {
     }
     
     // Apply category filter
-    if (categoryFilter) {
+    if (categoryFilter && categoryFilter !== 'all') {
       result = result.filter(task => task.category === categoryFilter);
     }
     
     // Apply difficulty filter
-    if (difficultyFilter) {
+    if (difficultyFilter && difficultyFilter !== 'all') {
       result = result.filter(task => task.difficulty === difficultyFilter);
     }
     
@@ -132,7 +132,7 @@ const Tasks = () => {
               <SelectValue placeholder="Категория" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Все категории</SelectItem>
+              <SelectItem value="all">Все категории</SelectItem>
               <SelectItem value="Web">Web</SelectItem>
               <SelectItem value="Mobile">Mobile</SelectItem>
               <SelectItem value="Crypto">Crypto</SelectItem>
@@ -146,7 +146,7 @@ const Tasks = () => {
               <SelectValue placeholder="Сложность" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Любая сложность</SelectItem>
+              <SelectItem value="all">Любая сложность</SelectItem>
               <SelectItem value="Лёгкая">Лёгкая</SelectItem>
               <SelectItem value="Средняя">Средняя</SelectItem>
               <SelectItem value="Сложная">Сложная</SelectItem>
