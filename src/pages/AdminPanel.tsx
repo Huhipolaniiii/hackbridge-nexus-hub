@@ -7,10 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { User } from '@/types/user';
 import { Course } from '@/types/course';
 import { Task } from '@/types/task';
 import { courses as mockCourses, tasks as mockTasks, users as mockUsers } from '@/services/mockData';
+import { UserX, TrashIcon, DollarSign, Settings, LogIn } from 'lucide-react';
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('users');
@@ -23,6 +33,8 @@ const AdminPanel = () => {
   const [userBalance, setUserBalance] = useState('');
   const [userRating, setUserRating] = useState('');
   
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  
   useEffect(() => {
     // Check if user is admin
     const userRole = localStorage.getItem('userRole');
@@ -34,7 +46,7 @@ const AdminPanel = () => {
     }
     
     // Load data
-    setUsers(mockUsers);
+    setUsers(mockUsers.map(user => ({ ...user, banned: false })));
     setCourses(mockCourses);
     setTasks(mockTasks);
     setIsLoading(false);
@@ -92,6 +104,32 @@ const AdminPanel = () => {
     setUserRating('');
   };
   
+  const handleToggleBanUser = (userId: string) => {
+    const updatedUsers = users.map(user => {
+      if (user.id === userId) {
+        const newBanStatus = !user.banned;
+        return {
+          ...user,
+          banned: newBanStatus
+        };
+      }
+      return user;
+    });
+    
+    const user = updatedUsers.find(u => u.id === userId);
+    if (user) {
+      toast.success(`Пользователь ${user.username} ${user.banned ? 'заблокирован' : 'разблокирован'}`);
+    }
+    
+    setUsers(updatedUsers);
+  };
+  
+  const handleDeleteTask = (taskId: string) => {
+    const updatedTasks = tasks.filter(task => task.id !== taskId);
+    setTasks(updatedTasks);
+    toast.success('Задание удалено');
+  };
+  
   const handleSelectUser = (userId: string) => {
     setSelectedUserId(userId);
     const user = users.find(u => u.id === userId);
@@ -120,13 +158,20 @@ const AdminPanel = () => {
           <p className="text-muted-foreground mt-1">
             Управление пользователями, курсами и заданиями
           </p>
+          <div className="mt-4 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-md">
+            <h3 className="font-bold flex items-center gap-2 text-yellow-500">
+              <LogIn className="h-4 w-4" /> Данные для входа администратора
+            </h3>
+            <p className="text-sm mt-2">Email: <span className="font-mono">admin@hackbridge.ru</span></p>
+            <p className="text-sm">Пароль: <span className="font-mono">admin123</span></p>
+          </div>
         </div>
         
         <Tabs defaultValue="users" value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="users">Пользователи</TabsTrigger>
-            <TabsTrigger value="courses">Курсы</TabsTrigger>
             <TabsTrigger value="tasks">Задания</TabsTrigger>
+            <TabsTrigger value="courses">Курсы</TabsTrigger>
           </TabsList>
           
           <TabsContent value="users" className="space-y-6 mt-6">
@@ -141,12 +186,17 @@ const AdminPanel = () => {
                       {users.map(user => (
                         <div 
                           key={user.id} 
-                          className={`p-4 rounded-md cursor-pointer transition-colors ${selectedUserId === user.id ? 'bg-hack-blue/10' : 'hover:bg-hack-dark'}`}
+                          className={`p-4 rounded-md cursor-pointer transition-colors ${selectedUserId === user.id ? 'bg-hack-blue/10' : 'hover:bg-hack-dark'} ${user.banned ? 'opacity-60' : ''}`}
                           onClick={() => handleSelectUser(user.id)}
                         >
                           <div className="flex justify-between items-center">
                             <div>
-                              <h3 className="font-medium">{user.username}</h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{user.username}</h3>
+                                {user.banned && (
+                                  <Badge variant="destructive" className="text-xs">Заблокирован</Badge>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground">{user.email}</p>
                               <p className="text-sm mt-1">Роль: {user.role}</p>
                             </div>
@@ -154,6 +204,18 @@ const AdminPanel = () => {
                               <p className="font-medium text-hack-green">{user.balance} ₽</p>
                               <p className="text-sm">Рейтинг: {user.rating}</p>
                               <p className="text-sm">Задач: {user.completedTasks}</p>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className={`mt-2 ${user.banned ? 'text-green-500 hover:text-green-600' : 'text-red-500 hover:text-red-600'}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleBanUser(user.id);
+                                }}
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                {user.banned ? 'Разблокировать' : 'Заблокировать'}
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -185,7 +247,8 @@ const AdminPanel = () => {
                           onChange={(e) => setUserBalance(e.target.value)}
                           disabled={!selectedUserId}
                         />
-                        <Button onClick={handleAddFunds} disabled={!selectedUserId}>
+                        <Button onClick={handleAddFunds} disabled={!selectedUserId} className="gap-2">
+                          <DollarSign className="h-4 w-4" />
                           Пополнить
                         </Button>
                       </div>
@@ -202,7 +265,8 @@ const AdminPanel = () => {
                           onChange={(e) => setUserRating(e.target.value)}
                           disabled={!selectedUserId}
                         />
-                        <Button onClick={handleUpdateRating} disabled={!selectedUserId}>
+                        <Button onClick={handleUpdateRating} disabled={!selectedUserId} className="gap-2">
+                          <Settings className="h-4 w-4" />
                           Обновить
                         </Button>
                       </div>
@@ -211,40 +275,6 @@ const AdminPanel = () => {
                 </Card>
               </div>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="courses" className="space-y-6 mt-6">
-            <Card className="hack-card">
-              <CardHeader>
-                <CardTitle>Управление курсами</CardTitle>
-                <CardDescription>
-                  Здесь вы можете управлять доступными курсами на платформе
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {courses.map(course => (
-                    <div 
-                      key={course.id} 
-                      className="p-4 rounded-md hover:bg-hack-dark cursor-pointer"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium">{course.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {course.description}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-hack-green">{course.price} ₽</p>
-                          <p className="text-sm">Сложность: {course.difficulty}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
           
           <TabsContent value="tasks" className="space-y-6 mt-6">
@@ -256,29 +286,79 @@ const AdminPanel = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {tasks.map(task => (
-                    <div 
-                      key={task.id} 
-                      className="p-4 rounded-md hover:bg-hack-dark cursor-pointer"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium">{task.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {task.description}
-                          </p>
-                          <p className="text-sm mt-1">Компания: {task.companyName}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-hack-green">{task.reward} ₽</p>
-                          <p className="text-sm">Сложность: {task.difficulty}</p>
-                          <p className="text-sm">Статус: {task.status}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Название</TableHead>
+                      <TableHead>Компания</TableHead>
+                      <TableHead>Категория</TableHead>
+                      <TableHead>Сложность</TableHead>
+                      <TableHead>Награда</TableHead>
+                      <TableHead>Статус</TableHead>
+                      <TableHead>Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tasks.map(task => (
+                      <TableRow key={task.id}>
+                        <TableCell className="font-medium">{task.title}</TableCell>
+                        <TableCell>{task.companyName}</TableCell>
+                        <TableCell>{task.category}</TableCell>
+                        <TableCell>{task.difficulty}</TableCell>
+                        <TableCell className="text-hack-green">{task.reward} ₽</TableCell>
+                        <TableCell>
+                          <Badge variant={task.status === 'Открыто' ? 'default' : task.status === 'В работе' ? 'outline' : 'secondary'}>
+                            {task.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-red-500 hover:text-red-600"
+                            onClick={() => handleDeleteTask(task.id)}
+                          >
+                            <TrashIcon className="h-4 w-4 mr-2" />
+                            Удалить
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="courses" className="space-y-6 mt-6">
+            <Card className="hack-card">
+              <CardHeader>
+                <CardTitle>Управление курсами</CardTitle>
+                <CardDescription>
+                  Здесь вы можете управлять доступными курсами на платформе
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Название</TableHead>
+                      <TableHead>Категория</TableHead>
+                      <TableHead>Сложность</TableHead>
+                      <TableHead>Цена</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {courses.map(course => (
+                      <TableRow key={course.id}>
+                        <TableCell className="font-medium">{course.title}</TableCell>
+                        <TableCell>{course.category}</TableCell>
+                        <TableCell>{course.difficulty}</TableCell>
+                        <TableCell className="text-hack-green">{course.price} ₽</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>

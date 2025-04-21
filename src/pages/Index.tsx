@@ -11,12 +11,14 @@ import TaskCard from '@/components/tasks/TaskCard';
 import { simulateApiRequest, courses, tasks } from '@/services/mockData';
 import { Course } from '@/types/course';
 import { Task } from '@/types/task';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const [popularCourses, setPopularCourses] = useState<Course[]>([]);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,6 +34,12 @@ const Index = () => {
 
     fetchData();
   }, []);
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/tasks?search=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <MainLayout>
@@ -49,6 +57,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-hack-blue hover:bg-hack-blue/80 text-black gap-2"
+              onClick={() => navigate('/courses')}
             >
               <BookOpen className="h-5 w-5" />
               Начать обучение
@@ -57,6 +66,7 @@ const Index = () => {
               size="lg" 
               variant="outline"
               className="gap-2"
+              onClick={() => navigate('/tasks')}
             >
               <Briefcase className="h-5 w-5" />
               Найти задания
@@ -124,6 +134,7 @@ const Index = () => {
               className="pl-9 w-64"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
         </div>
@@ -160,7 +171,7 @@ const Index = () => {
                   <Button 
                     variant="outline" 
                     className="gap-2"
-                    onClick={() => window.location.href = '/courses'}
+                    onClick={() => navigate('/courses')}
                   >
                     Посмотреть все курсы
                     <ChevronRight className="h-4 w-4" />
@@ -190,7 +201,7 @@ const Index = () => {
                   <Button 
                     variant="outline" 
                     className="gap-2"
-                    onClick={() => window.location.href = '/tasks'}
+                    onClick={() => navigate('/tasks')}
                   >
                     Посмотреть все задания
                     <ChevronRight className="h-4 w-4" />
@@ -214,6 +225,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-hack-green hover:bg-hack-green/80 text-black"
+              onClick={() => navigate('/register')}
             >
               Зарегистрироваться и начать
             </Button>

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { simulateApiRequest, tasks } from '@/services/mockData';
 import { Search, Plus, Building } from 'lucide-react';
 
 const Tasks = () => {
+  const location = useLocation();
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +27,15 @@ const Tasks = () => {
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
   const [sortOption, setSortOption] = useState<string>('newest');
   const [isCompanyAccount, setIsCompanyAccount] = useState(false);
+  
+  // Get search query from URL if exists
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+    }
+  }, [location.search]);
   
   // Fetch tasks
   useEffect(() => {
@@ -56,7 +67,9 @@ const Tasks = () => {
     if (searchTerm) {
       result = result.filter(task => 
         task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.description.toLowerCase().includes(searchTerm.toLowerCase())
+        task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.companyName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     

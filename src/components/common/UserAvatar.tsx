@@ -19,6 +19,7 @@ const UserAvatar = () => {
   const [userType, setUserType] = useState<'hacker' | 'company' | 'admin' | null>(null);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [isBanned, setIsBanned] = useState(false);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -26,19 +27,30 @@ const UserAvatar = () => {
     const userRole = localStorage.getItem('userRole');
     const storedUserName = localStorage.getItem('userName');
     const storedUserEmail = localStorage.getItem('userEmail');
+    const bannedStatus = localStorage.getItem('userBanned') === 'true';
     
     if (userRole) {
       setIsLoggedIn(true);
       setUserType(userRole as 'hacker' | 'company' | 'admin');
+      setIsBanned(bannedStatus);
       
       // Set user details from localStorage
       setUserName(storedUserName || '');
       setUserEmail(storedUserEmail || '');
+      
+      // If user is banned, show warning
+      if (bannedStatus && userRole !== 'admin') {
+        toast.error('Ваш аккаунт заблокирован администратором', {
+          duration: 5000,
+          id: 'banned-account'
+        });
+      }
     } else {
       setIsLoggedIn(false);
       setUserType(null);
       setUserName('');
       setUserEmail('');
+      setIsBanned(false);
     }
   }, []);
   
@@ -54,6 +66,7 @@ const UserAvatar = () => {
     localStorage.removeItem('userSkills');
     localStorage.removeItem('userPurchasedCourses');
     localStorage.removeItem('userCart');
+    localStorage.removeItem('userBanned');
     toast.success('Вы успешно вышли из системы');
     navigate('/');
   };
@@ -95,7 +108,7 @@ const UserAvatar = () => {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8 cursor-pointer">
             <AvatarImage src="/placeholder.svg" alt={userName} />
-            <AvatarFallback className="bg-muted">
+            <AvatarFallback className={`${isBanned && userType !== 'admin' ? 'bg-red-900/50' : 'bg-muted'}`}>
               {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
@@ -109,6 +122,7 @@ const UserAvatar = () => {
               {userType === 'admin' && <ShieldCheck className="h-3.5 w-3.5 text-red-500" />}
               {userName}
               {userType === 'admin' && <span className="text-xs text-red-500 font-bold ml-1">(Админ)</span>}
+              {isBanned && userType !== 'admin' && <span className="text-xs text-red-500 font-bold ml-1">(Заблокирован)</span>}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {userEmail}

@@ -1,156 +1,177 @@
 
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck } from 'lucide-react';
-import { toast } from 'sonner';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LogIn, AlertTriangle } from 'lucide-react';
+import MainLayout from '@/components/layout/MainLayout';
+import { simulateApiRequest } from '@/services/mockData';
+
+const formSchema = z.object({
+  email: z.string().email({ message: 'Введите корректный email' }),
+  password: z.string().min(6, { message: 'Пароль должен содержать минимум 6 символов' }),
+});
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     
-    if (!email || !password) {
-      toast.error('Пожалуйста, заполните все поля');
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    // Simulate login API request
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // In a real app, we would call an API
+      await simulateApiRequest(null);
       
-      // Admin login check
-      if (email === 'admin@hackbridge.ru' && password === 'admin123') {
+      // Check if this is admin login
+      if (values.email === 'admin@hackbridge.ru' && values.password === 'admin123') {
         localStorage.setItem('userRole', 'admin');
         localStorage.setItem('userName', 'Администратор');
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('userBalance', '1000000');
+        localStorage.setItem('userEmail', values.email);
+        localStorage.setItem('userBalance', '100000');
+        localStorage.setItem('userRating', '10');
         localStorage.setItem('userCompletedTasks', '0');
-        localStorage.setItem('userRating', '0');
         localStorage.setItem('userSkills', JSON.stringify([]));
         localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
         
-        toast.success('Вход выполнен успешно (Администратор)');
-        navigate('/');
+        toast.success('Вы успешно вошли как администратор');
+        navigate('/admin');
         return;
       }
       
-      // For demo, we'll assume company/hacker based on email domain
-      const isCompany = email.includes('company') || email.includes('business');
+      // Mock login for demo purposes
+      // In a real app, the token would come from the server
+      localStorage.setItem('userRole', 'hacker');
+      localStorage.setItem('userName', 'Иван Иванов');
+      localStorage.setItem('userEmail', values.email);
+      localStorage.setItem('userBalance', '5000');
+      localStorage.setItem('userRating', '4.7');
+      localStorage.setItem('userCompletedTasks', '12');
+      localStorage.setItem('userSkills', JSON.stringify([
+        { name: 'Web Security', level: 7 },
+        { name: 'Penetration Testing', level: 5 },
+        { name: 'Network Security', level: 6 },
+      ]));
+      localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
       
-      if (isCompany) {
-        localStorage.setItem('userRole', 'company');
-        localStorage.setItem('userName', 'ТехноЩит');
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('userBalance', '50000');
-        localStorage.setItem('userCompletedTasks', '0');
-        localStorage.setItem('userRating', '0');
-        localStorage.setItem('userSkills', JSON.stringify([]));
-        localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
-      } else {
-        localStorage.setItem('userRole', 'hacker');
-        localStorage.setItem('userName', email.split('@')[0]);
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('userBalance', '5000');
-        localStorage.setItem('userCompletedTasks', '0');
-        localStorage.setItem('userRating', '0');
-        localStorage.setItem('userSkills', JSON.stringify([]));
-        localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
-      }
-      
-      toast.success('Вход выполнен успешно');
+      toast.success('Вы успешно вошли в систему');
       navigate('/');
-    }, 1000);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Ошибка при входе');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-hack-darker p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center">
-            <div className="inline-flex items-center gap-2">
-              <ShieldCheck className="h-8 w-8 text-hack-blue animate-pulse-glow" />
-              <span className="font-bold tracking-tighter text-2xl hack-gradient-text">
-                HackBridge
-              </span>
-            </div>
-          </div>
-          <p className="text-muted-foreground mt-2">
-            Мост между обучением и реальной практикой
-          </p>
-        </div>
-        
+    <MainLayout>
+      <div className="max-w-md mx-auto pt-8 pb-16">
         <Card className="hack-card">
           <CardHeader>
-            <CardTitle>Вход в аккаунт</CardTitle>
+            <CardTitle className="text-2xl">Вход в аккаунт</CardTitle>
             <CardDescription>
-              Введите свои данные для входа в систему
+              Введите ваши данные для доступа к платформе
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@mail.ru"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+          <CardContent>
+            <Alert className="mb-4 bg-yellow-500/20 text-yellow-500 border-yellow-500/30">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-sm mt-0">
+                Данные для входа администратора:<br />
+                Email: <span className="font-mono">admin@hackbridge.ru</span><br />
+                Пароль: <span className="font-mono">admin123</span>
+              </AlertDescription>
+            </Alert>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="example@email.com" 
+                          type="email" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Пароль</Label>
-                  <Link
-                    to="/forgot-password"
-                    className="text-xs text-hack-blue hover:text-hack-blue/80"
-                  >
-                    Забыли пароль?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Пароль</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="******" 
+                          type="password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button
-                type="submit"
-                className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Вход...' : 'Войти'}
-              </Button>
-              <div className="text-center text-sm">
-                Нет аккаунта?{' '}
-                <Link
-                  to="/register"
-                  className="text-hack-blue hover:text-hack-blue/80 font-medium"
+                <Button 
+                  type="submit" 
+                  className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <LogIn className="mr-2 h-4 w-4 animate-spin" /> 
+                      Вход...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <LogIn className="mr-2 h-4 w-4" /> 
+                      Войти
+                    </span>
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <div className="text-center w-full">
+              <span className="text-sm text-muted-foreground">
+                Еще нет аккаунта?{' '}
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-hack-blue"
+                  onClick={() => navigate('/register')}
                 >
                   Зарегистрироваться
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
+                </Button>
+              </span>
+            </div>
+          </CardFooter>
         </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

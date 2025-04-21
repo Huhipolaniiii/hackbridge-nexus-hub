@@ -10,6 +10,7 @@ export interface User {
   completedTasks: number;
   skills: Skill[];
   purchasedCourses: string[];
+  banned?: boolean;
 }
 
 export interface Skill {
