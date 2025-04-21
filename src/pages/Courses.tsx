@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,9 +28,14 @@ import {
 } from '@/components/ui/select';
 
 const fetchCourses = async (): Promise<Course[]> => {
-  // В реальном приложении здесь был бы API запрос
   return new Promise((resolve) => {
-    setTimeout(() => resolve(courses), 800);
+    const coursesWithMeta = courses.map(course => ({
+      ...course,
+      studentsCount: Math.floor(Math.random() * 1000) + 50,
+      createdAt: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString(),
+      categories: [course.category]
+    }));
+    setTimeout(() => resolve(coursesWithMeta), 800);
   });
 };
 
@@ -67,17 +71,15 @@ const Courses = () => {
     
     return coursesData
       .filter(course => {
-        // Фильтрация по поисковому запросу
         const matchesSearch = 
           course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
           course.description.toLowerCase().includes(searchQuery.toLowerCase());
         
-        // Фильтрация по категориям
         const matchesCategory = 
           selectedCategories.length === 0 || 
-          selectedCategories.some(cat => course.categories?.includes(cat));
+          (course.categories && selectedCategories.some(cat => course.categories?.includes(cat))) ||
+          selectedCategories.includes(course.category);
         
-        // Фильтрация по сложности
         const matchesDifficulty = 
           !selectedDifficulty || 
           course.difficulty === selectedDifficulty;
@@ -85,16 +87,15 @@ const Courses = () => {
         return matchesSearch && matchesCategory && matchesDifficulty;
       })
       .sort((a, b) => {
-        // Сортировка
         switch (sortBy) {
           case 'priceAsc':
             return a.price - b.price;
           case 'priceDesc':
             return b.price - a.price;
           case 'newest':
-            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+            return new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime();
           default: // popular
-            return b.studentsCount - a.studentsCount;
+            return (b.studentsCount || 0) - (a.studentsCount || 0);
         }
       });
   }, [coursesData, searchQuery, selectedCategories, selectedDifficulty, sortBy]);
@@ -121,7 +122,6 @@ const Courses = () => {
           </div>
         </div>
         
-        {/* Фильтры */}
         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6 animate-fade-in animation-delay-200">
           <div className="space-y-6 hack-card p-4 rounded-lg bg-hack-dark/50">
             <div>
@@ -268,7 +268,6 @@ const Courses = () => {
               </TabsContent>
               
               <TabsContent value="popular" className="mt-0">
-                {/* Содержимое вкладки "Популярные" - можно использовать тот же код с фильтрацией */}
                 {isLoading ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[1, 2, 3].map((i) => (
@@ -284,7 +283,7 @@ const Courses = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredCourses
-                      .sort((a, b) => b.studentsCount - a.studentsCount)
+                      .sort((a, b) => (b.studentsCount || 0) - (a.studentsCount || 0))
                       .slice(0, 6)
                       .map((course, index) => (
                         <div 
@@ -300,7 +299,6 @@ const Courses = () => {
               </TabsContent>
               
               <TabsContent value="new" className="mt-0">
-                {/* Содержимое вкладки "Новинки" - можно использовать тот же код с фильтрацией */}
                 {isLoading ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[1, 2, 3].map((i) => (
@@ -316,7 +314,7 @@ const Courses = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredCourses
-                      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+                      .sort((a, b) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime())
                       .slice(0, 6)
                       .map((course, index) => (
                         <div 

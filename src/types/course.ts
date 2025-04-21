@@ -10,4 +10,7 @@ export interface Course {
   lessonsCount: number;
   purchased?: boolean;
   inCart?: boolean;
+  studentsCount?: number;
+  createdAt?: string;
+  categories?: string[];
 }

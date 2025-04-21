@@ -1,4 +1,3 @@
-
 import { Course } from '@/types/course';
 import { Task } from '@/types/task';
 import { User } from '@/types/user';
@@ -14,6 +13,9 @@ export const courses: Course[] = [
     category: 'Web',
     imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070&auto=format&fit=crop',
     lessonsCount: 8,
+    studentsCount: 845,
+    createdAt: '2025-02-15T10:30:00Z',
+    categories: ['Web', 'Security'],
   },
   {
     id: '2',
@@ -24,6 +26,9 @@ export const courses: Course[] = [
     category: 'Web',
     imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=2034&auto=format&fit=crop',
     lessonsCount: 12,
+    studentsCount: 1243,
+    createdAt: '2025-01-20T14:15:00Z',
+    categories: ['Web', 'Database'],
   },
   {
     id: '3',
@@ -34,6 +39,9 @@ export const courses: Course[] = [
     category: 'Web',
     imageUrl: 'https://images.unsplash.com/photo-1593720213428-28a5b9e94613?q=80&w=2021&auto=format&fit=crop',
     lessonsCount: 10,
+    studentsCount: 756,
+    createdAt: '2025-03-05T09:45:00Z',
+    categories: ['Web', 'Security'],
   },
   {
     id: '4',
@@ -44,6 +52,9 @@ export const courses: Course[] = [
     category: 'OSINT',
     imageUrl: 'https://images.unsplash.com/photo-1590859808308-3d2d9c515b1a?q=80&w=2074&auto=format&fit=crop',
     lessonsCount: 14,
+    studentsCount: 1567,
+    createdAt: '2025-01-10T11:20:00Z',
+    categories: ['OSINT', 'Intelligence'],
   },
   {
     id: '5',
@@ -54,6 +65,9 @@ export const courses: Course[] = [
     category: 'Crypto',
     imageUrl: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=2032&auto=format&fit=crop',
     lessonsCount: 16,
+    studentsCount: 678,
+    createdAt: '2025-02-28T16:40:00Z',
+    categories: ['Crypto', 'Security'],
   },
   {
     id: '6',
@@ -64,6 +78,9 @@ export const courses: Course[] = [
     category: 'Mobile',
     imageUrl: 'https://images.unsplash.com/photo-1592609931095-54a2168ae893?q=80&w=2070&auto=format&fit=crop',
     lessonsCount: 12,
+    studentsCount: 924,
+    createdAt: '2025-03-15T13:10:00Z',
+    categories: ['Mobile', 'Android'],
   },
 ];
 
@@ -83,7 +100,7 @@ export const tasks: Task[] = [
   {
     id: '2',
     title: 'Аудит безопасности API',
-    description: 'Проведение аудита безопасности REST API нашего сервиса. Поиск уязвимостей в аутентификации и авторизации.',
+    description: 'Проведение аудита безопасности REST API нашего сервиса. Поиск уязвимостей в аутентификации и авт��ризации.',
     difficulty: 'Сложная',
     category: 'Web',
     reward: 30000,
