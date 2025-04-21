@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,20 @@ interface CourseCardProps {
 const CourseCard = ({ course }: CourseCardProps) => {
   const navigate = useNavigate();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [userBalance, setUserBalance] = useState(0);
+  const [isPurchased, setIsPurchased] = useState(false);
+  
+  useEffect(() => {
+    // Get user balance
+    const balanceString = localStorage.getItem('userBalance');
+    const balance = balanceString ? parseFloat(balanceString) : 0;
+    setUserBalance(balance);
+    
+    // Check if course is already purchased
+    const purchasedCoursesString = localStorage.getItem('userPurchasedCourses');
+    const purchasedCourses = purchasedCoursesString ? JSON.parse(purchasedCoursesString) : [];
+    setIsPurchased(purchasedCourses.includes(course.id));
+  }, [course.id]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -24,6 +38,18 @@ const CourseCard = ({ course }: CourseCardProps) => {
     if (!userRole) {
       toast.error('Необходимо войти в аккаунт для добавления курса в корзину');
       navigate('/login');
+      return;
+    }
+    
+    // Check if course is already purchased
+    if (isPurchased) {
+      toast.info('Вы уже приобрели этот курс');
+      return;
+    }
+    
+    // Check if user has enough balance
+    if (userBalance < course.price) {
+      toast.error('Недостаточно средств на балансе');
       return;
     }
     
@@ -47,7 +73,8 @@ const CourseCard = ({ course }: CourseCardProps) => {
       id: course.id,
       title: course.title,
       price: course.price,
-      type: 'course'
+      type: 'course',
+      imageUrl: course.imageUrl
     });
     
     // Save updated cart
@@ -89,6 +116,13 @@ const CourseCard = ({ course }: CourseCardProps) => {
             {course.difficulty}
           </Badge>
         </div>
+        {isPurchased && (
+          <div className="absolute top-2 left-2">
+            <Badge variant="default" className="bg-hack-green">
+              Куплено
+            </Badge>
+          </div>
+        )}
       </div>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
@@ -106,16 +140,31 @@ const CourseCard = ({ course }: CourseCardProps) => {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between pt-0">
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="w-full gap-1"
-          onClick={(e) => handleAddToCart(e)}
-          disabled={isAddingToCart}
-        >
-          <ShoppingCart className="h-4 w-4" />
-          В корзину
-        </Button>
+        {isPurchased ? (
+          <Button 
+            variant="default" 
+            size="sm"
+            className="w-full gap-1 bg-hack-green hover:bg-hack-green/80"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/courses/${course.id}`);
+            }}
+          >
+            <BookOpen className="h-4 w-4" />
+            Перейти к курсу
+          </Button>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="w-full gap-1"
+            onClick={(e) => handleAddToCart(e)}
+            disabled={isAddingToCart || userBalance < course.price}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            В корзину
+          </Button>
+        )}
         <Button 
           variant="ghost" 
           size="icon"

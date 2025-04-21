@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import PostTask from "./pages/PostTask";
 import AuthGuard from "./components/auth/AuthGuard";
 import ProfileSettings from "./pages/ProfileSettings";
+import AdminPanel from "./pages/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,16 @@ const App = () => (
             element={
               <AuthGuard>
                 <ProfileSettings />
+              </AuthGuard>
+            } 
+          />
+          
+          {/* Admin route */}
+          <Route 
+            path="/admin" 
+            element={
+              <AuthGuard>
+                <AdminPanel />
               </AuthGuard>
             } 
           />

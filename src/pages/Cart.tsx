@@ -26,6 +26,7 @@ interface CartItem {
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userBalance, setUserBalance] = useState(0);
   
   useEffect(() => {
     const fetchCartItems = async () => {
@@ -34,6 +35,11 @@ const Cart = () => {
         // Get cart from localStorage
         const cartString = localStorage.getItem('userCart');
         const userCart = cartString ? JSON.parse(cartString) : [];
+        
+        // Get user balance
+        const balanceString = localStorage.getItem('userBalance');
+        const balance = balanceString ? parseFloat(balanceString) : 0;
+        setUserBalance(balance);
         
         // Ensure all cart items have a valid imageUrl
         const updatedCart = userCart.map((item: CartItem) => {
@@ -73,6 +79,32 @@ const Cart = () => {
   };
   
   const handleCheckout = () => {
+    const total = calculateTotal();
+    
+    // Check if user has enough balance
+    if (userBalance < total) {
+      toast.error('Недостаточно средств на балансе');
+      return;
+    }
+    
+    // Update user balance
+    const newBalance = userBalance - total;
+    localStorage.setItem('userBalance', newBalance.toString());
+    setUserBalance(newBalance);
+    
+    // Update purchased courses
+    const purchasedCoursesString = localStorage.getItem('userPurchasedCourses');
+    let purchasedCourses = purchasedCoursesString ? JSON.parse(purchasedCoursesString) : [];
+    
+    // Add course IDs to purchased courses
+    cartItems.forEach(item => {
+      if (item.type === 'course' && !purchasedCourses.includes(item.id)) {
+        purchasedCourses.push(item.id);
+      }
+    });
+    
+    localStorage.setItem('userPurchasedCourses', JSON.stringify(purchasedCourses));
+    
     toast.success('Покупка успешно совершена!');
     setCartItems([]);
     localStorage.setItem('userCart', JSON.stringify([]));
@@ -154,11 +186,21 @@ const Cart = () => {
                     <span>Итого:</span>
                     <span className="text-hack-green">{calculateTotal()} ₽</span>
                   </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Ваш баланс:</span>
+                    <span>{userBalance} ₽</span>
+                  </div>
+                  {userBalance < calculateTotal() && (
+                    <div className="text-sm text-red-500 font-medium">
+                      Недостаточно средств на балансе
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter>
                   <Button 
                     className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black gap-2"
                     onClick={handleCheckout}
+                    disabled={userBalance < calculateTotal()}
                   >
                     <CreditCard className="h-4 w-4" />
                     Оформить заказ

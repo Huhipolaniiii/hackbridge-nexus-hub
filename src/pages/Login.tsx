@@ -28,6 +28,22 @@ const Login = () => {
     setTimeout(() => {
       setIsLoading(false);
       
+      // Admin login check
+      if (email === 'admin@hackbridge.ru' && password === 'admin123') {
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('userName', 'Администратор');
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('userBalance', '1000000');
+        localStorage.setItem('userCompletedTasks', '0');
+        localStorage.setItem('userRating', '0');
+        localStorage.setItem('userSkills', JSON.stringify([]));
+        localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
+        
+        toast.success('Вход выполнен успешно (Администратор)');
+        navigate('/');
+        return;
+      }
+      
       // For demo, we'll assume company/hacker based on email domain
       const isCompany = email.includes('company') || email.includes('business');
       
@@ -35,10 +51,20 @@ const Login = () => {
         localStorage.setItem('userRole', 'company');
         localStorage.setItem('userName', 'ТехноЩит');
         localStorage.setItem('userEmail', email);
+        localStorage.setItem('userBalance', '50000');
+        localStorage.setItem('userCompletedTasks', '0');
+        localStorage.setItem('userRating', '0');
+        localStorage.setItem('userSkills', JSON.stringify([]));
+        localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
       } else {
         localStorage.setItem('userRole', 'hacker');
-        localStorage.setItem('userName', 'Алексей Иванов');
+        localStorage.setItem('userName', email.split('@')[0]);
         localStorage.setItem('userEmail', email);
+        localStorage.setItem('userBalance', '5000');
+        localStorage.setItem('userCompletedTasks', '0');
+        localStorage.setItem('userRating', '0');
+        localStorage.setItem('userSkills', JSON.stringify([]));
+        localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
       }
       
       toast.success('Вход выполнен успешно');

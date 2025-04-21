@@ -9,14 +9,14 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, Building } from 'lucide-react';
+import { User, LogOut, Settings, Building, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 const UserAvatar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userType, setUserType] = useState<'hacker' | 'company' | null>(null);
+  const [userType, setUserType] = useState<'hacker' | 'company' | 'admin' | null>(null);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const UserAvatar = () => {
     
     if (userRole) {
       setIsLoggedIn(true);
-      setUserType(userRole as 'hacker' | 'company');
+      setUserType(userRole as 'hacker' | 'company' | 'admin');
       
       // Set user details from localStorage
       setUserName(storedUserName || '');
@@ -48,6 +48,12 @@ const UserAvatar = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userBalance');
+    localStorage.removeItem('userCompletedTasks');
+    localStorage.removeItem('userRating');
+    localStorage.removeItem('userSkills');
+    localStorage.removeItem('userPurchasedCourses');
+    localStorage.removeItem('userCart');
     toast.success('Вы успешно вышли из системы');
     navigate('/');
   };
@@ -100,7 +106,9 @@ const UserAvatar = () => {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none flex items-center gap-1.5">
               {userType === 'company' && <Building className="h-3.5 w-3.5" />}
+              {userType === 'admin' && <ShieldCheck className="h-3.5 w-3.5 text-red-500" />}
               {userName}
+              {userType === 'admin' && <span className="text-xs text-red-500 font-bold ml-1">(Админ)</span>}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {userEmail}
@@ -116,6 +124,12 @@ const UserAvatar = () => {
           <Settings className="mr-2 h-4 w-4" />
           <span>Настройки</span>
         </DropdownMenuItem>
+        {userType === 'admin' && (
+          <DropdownMenuItem onClick={() => navigate('/admin')}>
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            <span>Панель администратора</span>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={handleLogout}
