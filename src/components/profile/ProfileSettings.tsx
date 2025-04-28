@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { UserCog, Shield, Bell, CreditCard, Lock } from "lucide-react";
+import { UserCog, Shield, Bell, CreditCard, Lock, Download } from "lucide-react";
+import { zipService } from "@/services/zipService";
 
 export default function ProfileSettings() {
   const [activeTab, setActiveTab] = useState("account");
@@ -26,6 +27,11 @@ export default function ProfileSettings() {
   });
   
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
   
   useEffect(() => {
     // Load user data from localStorage
@@ -48,6 +54,14 @@ export default function ProfileSettings() {
     });
   };
   
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData({
+      ...passwordData,
+      [name]: value
+    });
+  };
+  
   const handleSaveSettings = () => {
     setIsLoading(true);
     
@@ -60,6 +74,57 @@ export default function ProfileSettings() {
       setIsLoading(false);
       toast.success("Настройки успешно сохранены");
     }, 800);
+  };
+  
+  const handleChangePassword = () => {
+    // Проверяем, что новый пароль и подтверждение совпадают
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("Новый пароль и подтверждение не совпадают");
+      return;
+    }
+    
+    // Проверяем, что новый пароль не пустой и имеет минимальную длину
+    if (!passwordData.newPassword || passwordData.newPassword.length < 6) {
+      toast.error("Новый пароль должен содержать минимум 6 символов");
+      return;
+    }
+    
+    // Симуляция API запроса
+    setIsLoading(true);
+    setTimeout(() => {
+      // В реальном приложении здесь был бы запрос к API для смены пароля
+      
+      // Очищаем поля после успешной смены пароля
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+      
+      setIsLoading(false);
+      toast.success("Пароль успешно изменен");
+    }, 800);
+  };
+  
+  const handleDownloadData = async () => {
+    // Получаем данные пользователя для экспорта
+    const userDataForExport = {
+      username: userData.username,
+      email: userData.email,
+      role: localStorage.getItem("userRole") || "",
+      balance: localStorage.getItem("userBalance") || "0",
+      rating: localStorage.getItem("userRating") || "0",
+      completedTasks: localStorage.getItem("userCompletedTasks") || "0",
+      skills: JSON.parse(localStorage.getItem("userSkills") || "[]")
+    };
+    
+    // Создаем и скачиваем zip-файл
+    const success = await zipService.createUserDataZip(userDataForExport);
+    if (success) {
+      toast.success("Данные успешно экспортированы");
+    } else {
+      toast.error("Ошибка при экспорте данных");
+    }
   };
   
   const getInitials = (name: string) => {
@@ -185,6 +250,16 @@ export default function ProfileSettings() {
                           className="min-h-32"
                         />
                       </div>
+                      <div>
+                        <Button 
+                          variant="outline" 
+                          onClick={handleDownloadData}
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Экспортировать данные (.zip)
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter>
@@ -238,7 +313,10 @@ export default function ProfileSettings() {
                             <Label htmlFor="current-password">Текущий пароль</Label>
                             <Input
                               id="current-password"
+                              name="currentPassword"
                               type="password"
+                              value={passwordData.currentPassword}
+                              onChange={handlePasswordChange}
                               placeholder="••••••••"
                             />
                           </div>
@@ -246,7 +324,10 @@ export default function ProfileSettings() {
                             <Label htmlFor="new-password">Новый пароль</Label>
                             <Input
                               id="new-password"
+                              name="newPassword"
                               type="password"
+                              value={passwordData.newPassword}
+                              onChange={handlePasswordChange}
                               placeholder="••••••••"
                             />
                           </div>
@@ -254,11 +335,17 @@ export default function ProfileSettings() {
                             <Label htmlFor="confirm-password">Подтверждение пароля</Label>
                             <Input
                               id="confirm-password"
+                              name="confirmPassword"
                               type="password"
+                              value={passwordData.confirmPassword}
+                              onChange={handlePasswordChange}
                               placeholder="••••••••"
                             />
                           </div>
-                          <Button className="bg-hack-blue hover:bg-hack-blue/80 text-black mt-2">
+                          <Button 
+                            className="bg-hack-blue hover:bg-hack-blue/80 text-black mt-2" 
+                            onClick={handleChangePassword}
+                          >
                             Изменить пароль
                           </Button>
                         </div>
