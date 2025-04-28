@@ -1,0 +1,36 @@
+
+{
+  "appId": "com.hackbridge.app",
+  "productName": "HackBridge",
+  "directories": {
+    "buildResources": "public",
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "src/electron/**/*",
+    "src/python/**/*"
+  ],
+  "mac": {
+    "category": "public.app-category.education",
+    "target": ["dmg", "zip"]
+  },
+  "win": {
+    "target": ["nsis"]
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Education"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "extraResources": [
+    {
+      "from": "src/python",
+      "to": "python"
+    }
+  ]
+}

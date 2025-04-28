@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -9,6 +8,7 @@ import Logo from '@/components/common/Logo';
 import UserAvatar from '@/components/common/UserAvatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import AppModeIndicator from '@/components/common/AppModeIndicator';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -60,7 +60,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     );
   }
 
-  // Adding back the isActive function that was missing
+  // Adding the isActive function that was missing
   const isActive = (path: string): boolean => {
     return location.pathname === path;
   };
@@ -107,6 +107,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             </nav>
           </div>
           <div className="flex items-center gap-4">
+            <AppModeIndicator />
             {isLoggedIn && (
               <Button variant="ghost" size="icon" asChild>
                 <Link to="/cart">
