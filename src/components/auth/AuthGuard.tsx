@@ -14,6 +14,19 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   useEffect(() => {
     // Check if user is logged in
     const userRole = localStorage.getItem('userRole');
+    
+    // For admin routes, also verify the email
+    if (location.pathname === '/admin') {
+      const userEmail = localStorage.getItem('userEmail');
+      const isAdmin = userRole === 'admin' && userEmail === 'admin@hackbridge.ru';
+      
+      if (!isAdmin && userRole) {
+        toast.error('У вас нет прав доступа к панели администратора');
+        setIsLoggedIn(false);
+        return;
+      }
+    }
+    
     setIsLoggedIn(!!userRole);
   }, [location]); // Re-check on location change
   

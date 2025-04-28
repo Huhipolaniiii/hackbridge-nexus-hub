@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,11 +22,17 @@ const AdminPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Strict authorization check
     const userRole = localStorage.getItem('userRole');
-    if (userRole !== 'admin') {
+    const userEmail = localStorage.getItem('userEmail');
+    
+    // Only users with role="admin" AND the correct email can access
+    if (userRole !== 'admin' || userEmail !== 'admin@hackbridge.ru') {
+      toast.error('У вас нет прав доступа к этой странице');
       window.location.href = '/';
       return;
     }
+    
     setUsers(mockUsers.map(user => ({ ...user, banned: false })));
     setCourses(mockCourses);
     setTasks(mockTasks);

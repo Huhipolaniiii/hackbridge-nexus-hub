@@ -38,7 +38,7 @@ const Login = () => {
       // In a real app, we would call an API
       await simulateApiRequest(null);
       
-      // Check if this is admin login
+      // Check if this is admin login - now with strict validation
       if (values.email === 'admin@hackbridge.ru' && values.password === 'admin123') {
         localStorage.setItem('userRole', 'admin');
         localStorage.setItem('userName', 'Администратор');
@@ -54,8 +54,14 @@ const Login = () => {
         return;
       }
       
-      // Mock login for demo purposes
-      // In a real app, the token would come from the server
+      // If it's not a valid admin login but email contains "admin", reject
+      if (values.email.includes('admin') || values.email === 'admin@hackbridge.ru') {
+        toast.error('Неверные учетные данные администратора');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Mock login for regular users
       localStorage.setItem('userRole', 'hacker');
       localStorage.setItem('userName', 'Иван Иванов');
       localStorage.setItem('userEmail', values.email);

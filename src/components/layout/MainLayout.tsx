@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, BookOpen, Briefcase, ShoppingCart, User, LogOut, Home } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 import UserAvatar from '@/components/common/UserAvatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -16,13 +17,30 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [showUserCheck, setShowUserCheck] = useState(true);
+  const [showBanDialog, setShowBanDialog] = useState(false);
 
   useEffect(() => {
     // Check login status whenever component mounts or location changes
     const storedUserRole = localStorage.getItem('userRole');
     setIsLoggedIn(!!storedUserRole);
     setUserRole(storedUserRole);
+    
+    // Show the check dialog only on first visit
+    const hasChecked = sessionStorage.getItem('userCheckCompleted');
+    if (hasChecked) {
+      setShowUserCheck(false);
+    }
   }, [location]);
+  
+  const handleUserIdentityConfirm = (isNikitaPanachev: boolean) => {
+    sessionStorage.setItem('userCheckCompleted', 'true');
+    setShowUserCheck(false);
+    
+    if (isNikitaPanachev) {
+      setShowBanDialog(true);
+    }
+  };
   
   const isActive = (path: string): boolean => {
     return location.pathname === path;
@@ -48,6 +66,46 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-hack-darker">
+      {/* User Identity Check Dialog */}
+      <Dialog open={showUserCheck} onOpenChange={setShowUserCheck}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Проверка личности</DialogTitle>
+            <DialogDescription>
+              Пожалуйста, ответьте на следующий вопрос для продолжения.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4 flex flex-col gap-4">
+            <p className="text-center font-semibold text-lg">Вы Никита Паначёв?</p>
+            <div className="flex justify-center gap-4 mt-2">
+              <Button variant="destructive" onClick={() => handleUserIdentityConfirm(true)}>
+                Да
+              </Button>
+              <Button onClick={() => handleUserIdentityConfirm(false)}>
+                Нет
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Ban Dialog */}
+      <Dialog open={showBanDialog} onOpenChange={setShowBanDialog}>
+        <DialogContent className="sm:max-w-md bg-red-950 border-red-800">
+          <DialogHeader>
+            <DialogTitle className="text-red-400">Доступ запрещен</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <p className="text-center text-lg text-red-300">
+              Ваш аккаунт заблокирован за нарушение правил сообщества.
+            </p>
+            <p className="text-center mt-2 text-red-300">
+              Для получения дополнительной информации обратитесь к администратору.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <header className="border-b border-border/40 bg-hack-dark/90 backdrop-blur supports-[backdrop-filter]:bg-hack-dark/60">
         <div className="container flex h-16 items-center justify-between">
