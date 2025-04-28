@@ -53,7 +53,7 @@ export const zipService = {
       const zip = new JSZip();
       
       // Add project source files
-      zip.file("src/services/zipService.ts", `// Project source files\n${sourceFiles.zipService}`);
+      zip.file("src/services/zipService.ts", sourceFiles.zipService);
       zip.file("src/pages/AdminPanel.tsx", sourceFiles.adminPanel);
       zip.file("src/python/sample.py", sourceFiles.pythonSample);
       zip.file("public/robots.txt", sourceFiles.robots);
@@ -61,6 +61,8 @@ export const zipService = {
       zip.file("src/components/ui/tabs.tsx", sourceFiles.tabs);
       zip.file("src/components/ui/sheet.tsx", sourceFiles.sheet);
       zip.file("src/components/ui/sidebar.tsx", sourceFiles.sidebar);
+      zip.file("src/electron/pythonBridge.js", sourceFiles.pythonBridge);
+      zip.file("PYTHON_INTEGRATION.md", sourceFiles.pythonDocs);
       
       // Add project data files
       const dataFolder = zip.folder("project-data");
@@ -110,10 +112,16 @@ export const zipService = {
         `# HackBridge Platform\n\n` +
         `Export Date: ${projectData.exportDate}\n` +
         `Platform Version: 1.0.0\n\n` +
+        `## Key Features\n\n` +
+        `- Secure Python code execution environment\n` +
+        `- Real-time code analysis\n` +
+        `- Automated task verification\n` +
+        `- Performance metrics collection\n\n` +
         `## Project Statistics\n` +
         `- Users: ${projectData.users.length}\n` +
         `- Courses: ${projectData.courses.length}\n` +
-        `- Tasks: ${projectData.tasks.length}\n`
+        `- Tasks: ${projectData.tasks.length}\n` +
+        `\nFor detailed information about Python integration, see PYTHON_INTEGRATION.md`
       );
       
       // Generate and download the zip file
@@ -138,4 +146,6 @@ const sourceFiles = {
   tabs: document.querySelector('[data-filepath="src/components/ui/tabs.tsx"]')?.textContent || '',
   sheet: document.querySelector('[data-filepath="src/components/ui/sheet.tsx"]')?.textContent || '',
   sidebar: document.querySelector('[data-filepath="src/components/ui/sidebar.tsx"]')?.textContent || '',
+  pythonBridge: document.querySelector('[data-filepath="src/electron/pythonBridge.js"]')?.textContent || '',
+  pythonDocs: document.querySelector('[data-filepath="PYTHON_INTEGRATION.md"]')?.textContent || '',
 };

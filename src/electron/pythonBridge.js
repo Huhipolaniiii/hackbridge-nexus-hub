@@ -3,41 +3,75 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 /**
- * Функция для запуска Python-скрипта из Electron
- * @param {string} scriptPath - путь к Python скрипту
- * @param {Array} args - аргументы командной строки для скрипта
- * @returns {Promise} - промис с результатом выполнения скрипта
+ * Класс для взаимодействия с Python-скриптами
  */
-function runPythonScript(scriptPath, args = []) {
-  return new Promise((resolve, reject) => {
-    // Определяем путь к скрипту относительно корня проекта
-    const pythonPath = process.env.NODE_ENV === 'development' 
-      ? 'python' // для разработки используем системный Python
-      : path.join(process.resourcesPath, 'python_env/bin/python'); // для сборки
-
-    const script = spawn(pythonPath, [scriptPath, ...args]);
+class PythonBridge {
+  constructor() {
+    this.pythonPath = process.env.NODE_ENV === 'development'
+      ? 'python'
+      : path.join(process.resourcesPath, 'python_env/bin/python');
     
-    let outputData = '';
-    let errorData = '';
+    this.scriptPath = path.join(__dirname, '../python/sample.py');
+  }
 
-    script.stdout.on('data', (data) => {
-      outputData += data.toString();
-    });
+  /**
+   * Запуск Python-скрипта с аргументами
+   * @param {Array} args - аргументы командной строки
+   * @returns {Promise} результат выполнения скрипта
+   */
+  async runScript(args = []) {
+    return new Promise((resolve, reject) => {
+      const script = spawn(this.pythonPath, [this.scriptPath, ...args]);
+      
+      let outputData = '';
+      let errorData = '';
 
-    script.stderr.on('data', (data) => {
-      errorData += data.toString();
-    });
+      script.stdout.on('data', (data) => {
+        outputData += data.toString();
+      });
 
-    script.on('close', (code) => {
-      if (code !== 0) {
-        reject(new Error(`Python script exited with code ${code}: ${errorData}`));
-        return;
-      }
-      resolve(outputData);
+      script.stderr.on('data', (data) => {
+        errorData += data.toString();
+      });
+
+      script.on('close', (code) => {
+        if (code !== 0) {
+          reject(new Error(`Python script exited with code ${code}: ${errorData}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(outputData));
+        } catch (error) {
+          reject(new Error(`Failed to parse Python output: ${error.message}`));
+        }
+      });
     });
-  });
+  }
+
+  /**
+   * Получение данных пользователя
+   */
+  async getUserData() {
+    return this.runScript(['get_user']);
+  }
+
+  /**
+   * Отправка задания на проверку
+   * @param {string} taskId - ID задания
+   * @param {string} code - код решения
+   */
+  async submitTask(taskId, code) {
+    return this.runScript(['submit_task', taskId, code]);
+  }
+
+  /**
+   * Анализ безопасности кода
+   * @param {string} code - код для анализа
+   */
+  async analyzeCode(code) {
+    return this.runScript(['analyze', code]);
+  }
 }
 
-module.exports = {
-  runPythonScript
-};
+module.exports = new PythonBridge();
+
