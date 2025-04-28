@@ -44,10 +44,6 @@ export const zipService = {
     }
   },
 
-  /**
-   * Создает zip-архив с данными проекта и скачивает его
-   * @param projectData - данные проекта для сохранения в архиве
-   */
   createProjectZip: async (projectData: any) => {
     try {
       const zip = new JSZip();
@@ -143,51 +139,86 @@ export const zipService = {
         `\nFor detailed information about Python integration, see PYTHON_INTEGRATION.md`
       );
       
-      // Improved batch file for launching Electron app
+      // Add simplified HTML launcher
+      zip.file("launch.html", 
+        `<!DOCTYPE html>
+        <html>
+        <head>
+            <title>HackBridge Launcher</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                    background: #1a1a1a;
+                    color: white;
+                }
+                .container {
+                    text-align: center;
+                    padding: 20px;
+                    border-radius: 8px;
+                    background: #2a2a2a;
+                }
+                .button {
+                    background: #4CAF50;
+                    color: white;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    margin: 10px;
+                    font-size: 16px;
+                }
+                .button:hover {
+                    background: #45a049;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>HackBridge Desktop Launcher</h2>
+                <p>Выберите способ запуска:</p>
+                <button class="button" onclick="runDesktop()">Запустить десктопную версию</button>
+                <button class="button" onclick="runBrowser()">Открыть в браузере</button>
+            </div>
+            <script>
+                function runDesktop() {
+                    const isWindows = navigator.platform.indexOf('Win') > -1;
+                    if (isWindows) {
+                        const bat = new ActiveXObject('WScript.Shell');
+                        bat.Run('start-app.bat', 1, true);
+                    } else {
+                        alert('Запуск десктопной версии доступен только для Windows');
+                    }
+                }
+                
+                function runBrowser() {
+                    window.location.href = 'index.html';
+                }
+            </script>
+        </body>
+        </html>`
+      );
+      
+      // Add simplified batch file
       zip.file("start-app.bat", 
         "@echo off\n" +
-        "echo ========================================\n" +
-        "echo   Starting HackBridge Desktop Application\n" +
-        "echo ========================================\n\n" +
-        "REM Переключение на локальный диск, чтобы избежать проблем с UNC путями\n" +
+        "echo Starting HackBridge Desktop Application...\n\n" +
         "IF \"%~d0\"==\"\\\\\" (\n" +
-        "  echo Запуск с сетевого диска. Переключение на локальный диск C:\n" +
         "  C:\n" +
-        "  CD %TEMP%\\HackBridge_Temp\n" +
-        "  IF NOT EXIST %TEMP%\\HackBridge_Temp MD %TEMP%\\HackBridge_Temp\n" +
-        "  IF EXIST %TEMP%\\HackBridge_Temp\\*.* DEL /F /Q %TEMP%\\HackBridge_Temp\\*.*\n" +
-        "  XCOPY \"%~dp0\\*\" \"%TEMP%\\HackBridge_Temp\\\" /E /I /Y\n" +
-        "  cd %TEMP%\\HackBridge_Temp\n" +
+        "  CD %TEMP%\\HackBridge\n" +
+        "  MD %TEMP%\\HackBridge 2>nul\n" +
+        "  XCOPY \"%~dp0\\*\" \"%TEMP%\\HackBridge\\\" /E /I /Y\n" +
+        "  cd %TEMP%\\HackBridge\n" +
         ") ELSE (\n" +
         "  cd %~dp0\n" +
         ")\n\n" +
-        "echo Checking for Node.js installation...\n" +
-        "node --version > nul 2>&1\n" +
-        "if %errorlevel% neq 0 (\n" +
-        "  echo ERROR: Node.js is not installed or not in PATH.\n" +
-        "  echo Please install Node.js from https://nodejs.org/ (version 16 or newer)\n" +
-        "  echo and restart this batch file.\n" +
-        "  pause\n" +
-        "  exit /b 1\n" +
-        ")\n\n" +
-        "echo Checking for npm installation...\n" +
-        "if not exist node_modules (\n" +
-        "  echo Installing dependencies (this may take a few minutes)...\n" +
-        "  call npm install --no-optional\n" +
-        "  if %errorlevel% neq 0 (\n" +
-        "    echo ERROR: Failed to install dependencies.\n" +
-        "    pause\n" +
-        "    exit /b 1\n" +
-        "  )\n" +
-        ")\n\n" +
-        "echo Installing additional required packages...\n" +
-        "call npm install electron@29.1.0 concurrently@8.2.2 wait-on@7.2.0 --no-save\n\n" +
-        "echo Launching HackBridge desktop application...\n" +
-        "call npm run electron:dev\n\n" +
-        "if %errorlevel% neq 0 (\n" +
-        "  echo ERROR: Failed to start the application.\n" +
-        "  echo See error messages above for details.\n" +
-        ")\n" +
+        "npm install\n" +
+        "npm run electron:dev\n" +
         "pause"
       );
       
