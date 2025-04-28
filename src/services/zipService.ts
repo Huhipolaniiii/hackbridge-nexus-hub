@@ -1,4 +1,3 @@
-
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -149,8 +148,19 @@ export const zipService = {
         "@echo off\n" +
         "echo ========================================\n" +
         "echo   Starting HackBridge Desktop Application\n" +
-        "echo ========================================\n" +
-        "cd %~dp0\n\n" +
+        "echo ========================================\n\n" +
+        "REM Переключение на локальный диск, чтобы избежать проблем с UNC путями\n" +
+        "IF \"%~d0\"==\"\\\\\" (\n" +
+        "  echo Запуск с сетевого диска. Переключение на локальный диск C:\n" +
+        "  C:\n" +
+        "  CD %TEMP%\\HackBridge_Temp\n" +
+        "  IF NOT EXIST %TEMP%\\HackBridge_Temp MD %TEMP%\\HackBridge_Temp\n" +
+        "  IF EXIST %TEMP%\\HackBridge_Temp\\*.* DEL /F /Q %TEMP%\\HackBridge_Temp\\*.*\n" +
+        "  XCOPY \"%~dp0\\*\" \"%TEMP%\\HackBridge_Temp\\\" /E /I /Y\n" +
+        "  cd %TEMP%\\HackBridge_Temp\n" +
+        ") ELSE (\n" +
+        "  cd %~dp0\n" +
+        ")\n\n" +
         "echo Checking for Node.js installation...\n" +
         "node --version > nul 2>&1\n" +
         "if %errorlevel% neq 0 (\n" +
@@ -210,4 +220,3 @@ const sourceFiles = {
   electronDev: document.querySelector('[data-filepath="electron/electron-dev.js"]')?.textContent || '',
   electronBuilderConfig: document.querySelector('[data-filepath="electron-builder.json"]')?.textContent || ''
 };
-
