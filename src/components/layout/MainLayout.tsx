@@ -19,8 +19,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [showUserCheck, setShowUserCheck] = useState(true);
-  const [showBanDialog, setShowBanDialog] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
 
   useEffect(() => {
@@ -29,33 +27,12 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     setIsLoggedIn(!!storedUserRole);
     setUserRole(storedUserRole);
     
-    // Show the check dialog only on first visit
-    const hasChecked = sessionStorage.getItem('userCheckCompleted');
-    if (hasChecked) {
-      const wasBanned = sessionStorage.getItem('userBanned');
-      if (wasBanned === 'true') {
-        setIsBanned(true);
-        setShowBanDialog(true);
-      }
-      setShowUserCheck(false);
+    // Check if user was banned
+    const wasBanned = sessionStorage.getItem('userBanned');
+    if (wasBanned === 'true') {
+      setIsBanned(true);
     }
   }, [location]);
-  
-  const handleUserIdentityConfirm = (isNikitaPanachev: boolean) => {
-    sessionStorage.setItem('userCheckCompleted', 'true');
-    setShowUserCheck(false);
-    
-    if (isNikitaPanachev) {
-      sessionStorage.setItem('userBanned', 'true');
-      setIsBanned(true);
-      setShowBanDialog(true);
-      // Clear user data if they were logged in
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userEmail');
-      setIsLoggedIn(false);
-      navigate('/');
-    }
-  };
 
   // If user is banned, only show the ban dialog
   if (isBanned) {
@@ -108,29 +85,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-hack-darker">
-      {/* User Identity Check Dialog */}
-      <Dialog open={showUserCheck} onOpenChange={setShowUserCheck}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Проверка личности</DialogTitle>
-            <DialogDescription>
-              Пожалуйста, ответьте на следующий вопрос для продолжения.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-4 flex flex-col gap-4">
-            <p className="text-center font-semibold text-lg">Вы Никита Паначёв?</p>
-            <div className="flex justify-center gap-4 mt-2">
-              <Button variant="destructive" onClick={() => handleUserIdentityConfirm(true)}>
-                Да
-              </Button>
-              <Button onClick={() => handleUserIdentityConfirm(false)}>
-                Нет
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
       {/* Header */}
       <header className="border-b border-border/40 bg-hack-dark/90 backdrop-blur supports-[backdrop-filter]:bg-hack-dark/60">
         <div className="container flex h-16 items-center justify-between">

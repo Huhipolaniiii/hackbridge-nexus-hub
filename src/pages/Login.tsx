@@ -14,6 +14,10 @@ import { LogIn, AlertTriangle } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { simulateApiRequest } from '@/services/mockData';
 
+// Define exact admin credentials
+const ADMIN_EMAIL = "admin@hackbridge.ru";
+const ADMIN_PASSWORD = "admin123";
+
 const formSchema = z.object({
   email: z.string().email({ message: 'Введите корректный email' }),
   password: z.string().min(6, { message: 'Пароль должен содержать минимум 6 символов' }),
@@ -38,11 +42,11 @@ const Login = () => {
       // In a real app, we would call an API
       await simulateApiRequest(null);
       
-      // Check if this is admin login - now with strict validation
-      if (values.email === 'admin@hackbridge.ru' && values.password === 'admin123') {
+      // Strict admin login check - using exact string comparison
+      if (values.email === ADMIN_EMAIL && values.password === ADMIN_PASSWORD) {
         localStorage.setItem('userRole', 'admin');
         localStorage.setItem('userName', 'Администратор');
-        localStorage.setItem('userEmail', values.email);
+        localStorage.setItem('userEmail', ADMIN_EMAIL);
         localStorage.setItem('userBalance', '100000');
         localStorage.setItem('userRating', '10');
         localStorage.setItem('userCompletedTasks', '0');
@@ -54,8 +58,10 @@ const Login = () => {
         return;
       }
       
-      // If it's not a valid admin login but email contains "admin", reject
-      if (values.email.includes('admin') || values.email === 'admin@hackbridge.ru') {
+      // If it contains "admin" in email but credentials don't match exactly, reject
+      if (values.email.toLowerCase().includes('admin') || 
+          values.email.toLowerCase().replace(/\s/g, '').includes('admin') ||
+          values.email.toLowerCase().includes('админ')) {
         toast.error('Неверные учетные данные администратора');
         setIsSubmitting(false);
         return;

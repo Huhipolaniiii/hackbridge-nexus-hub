@@ -15,9 +15,10 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     // Check if user is logged in
     const userRole = localStorage.getItem('userRole');
     
-    // For admin routes, also verify the email
+    // For admin routes, perform strict validation
     if (location.pathname === '/admin') {
       const userEmail = localStorage.getItem('userEmail');
+      // Strict check - must be exact match
       const isAdmin = userRole === 'admin' && userEmail === 'admin@hackbridge.ru';
       
       if (!isAdmin && userRole) {
