@@ -23,7 +23,9 @@ declare global {
  * Check if the application is running in Electron
  */
 export const isElectron = (): boolean => {
-  return window.electronAPI !== undefined;
+  const electronCheck = window.electronAPI !== undefined;
+  console.log(`Electron check: ${electronCheck ? 'Running in Electron' : 'Running in browser'}`);
+  return electronCheck;
 };
 
 /**
@@ -38,7 +40,9 @@ export const executePythonBridge = async (method: string, ...args: any[]) => {
   }
   
   try {
+    console.log(`Calling Electron API method: ${method}`, args);
     const result = await window.electronAPI!.executePythonBridge(method, ...args);
+    console.log(`Result from ${method}:`, result);
     return result;
   } catch (error) {
     console.error('Error executing Python bridge method:', error);
@@ -48,3 +52,4 @@ export const executePythonBridge = async (method: string, ...args: any[]) => {
     };
   }
 };
+

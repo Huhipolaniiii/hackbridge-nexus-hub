@@ -13,8 +13,20 @@ const startApp = () => {
   const root = createRoot(container);
   root.render(<App />);
   
-  console.log(`Running in ${window.electronAPI ? 'Electron' : 'browser'} mode`);
+  // Log the runtime environment
+  const isElectron = window.electronAPI !== undefined;
+  console.log(`Running in ${isElectron ? 'Electron' : 'browser'} mode`);
+  
+  if (isElectron) {
+    console.log("Electron API available");
+  } else {
+    console.info("Running in browser mode, Electron features will be disabled");
+  }
 };
 
 // Start the application
-startApp();
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM fully loaded, starting app');
+  startApp();
+});
+

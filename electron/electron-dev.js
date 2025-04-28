@@ -6,20 +6,17 @@ const path = require('path');
 
 // Function to start Electron
 function startElectron() {
+  console.log('Starting Electron development environment...');
+  console.log('Current directory:', process.cwd());
+  console.log('Main.js path:', path.join(__dirname, 'main.js'));
+  
   const electronProcess = spawn(electron, [path.join(__dirname, 'main.js')], {
     env: {
       ...process.env,
       NODE_ENV: 'development',
       ELECTRON_START_URL: 'http://localhost:8080'
-    }
-  });
-
-  electronProcess.stdout.on('data', data => {
-    console.log(`Electron: ${data}`);
-  });
-
-  electronProcess.stderr.on('data', data => {
-    console.error(`Electron Error: ${data}`);
+    },
+    stdio: 'inherit' // This will pipe the child process stdio to the parent
   });
 
   electronProcess.on('close', code => {
@@ -28,5 +25,6 @@ function startElectron() {
   });
 }
 
-console.log('Starting Electron...');
+console.log('Starting Electron in development mode...');
 startElectron();
+

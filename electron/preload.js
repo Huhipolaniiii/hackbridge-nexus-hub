@@ -6,7 +6,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld(
   'electronAPI', {
     executePythonBridge: (method, ...args) => {
+      console.log(`Preload: calling python-bridge-execute with method ${method}`);
       return ipcRenderer.invoke('python-bridge-execute', method, ...args);
     }
   }
 );
+
+console.log('Preload script executed, electronAPI exposed');
+

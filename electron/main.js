@@ -1,3 +1,4 @@
+
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
@@ -14,8 +15,8 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
     icon: path.join(__dirname, '../public/favicon.ico'),
@@ -31,11 +32,13 @@ function createWindow() {
         slashes: true,
       });
   
+  console.log(`Starting application at: ${startUrl}`);
   mainWindow.loadURL(startUrl);
   
   // Open DevTools in development mode
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
+    console.log('Development mode: DevTools opened');
   }
 
   // Emitted when the window is closed
@@ -45,7 +48,10 @@ function createWindow() {
 }
 
 // Create window when Electron has finished initialization
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  console.log('Electron app is ready');
+  createWindow();
+});
 
 // Quit when all windows are closed, except on macOS
 app.on('window-all-closed', function() {
@@ -58,6 +64,7 @@ app.on('activate', function() {
 
 // Set up IPC handlers for Python bridge communication
 ipcMain.handle('python-bridge-execute', async (event, method, ...args) => {
+  console.log(`Executing Python bridge method: ${method}`);
   try {
     if (!pythonBridge[method]) {
       throw new Error(`Method ${method} not found in pythonBridge`);
@@ -65,6 +72,8 @@ ipcMain.handle('python-bridge-execute', async (event, method, ...args) => {
     const result = await pythonBridge[method](...args);
     return { success: true, data: result };
   } catch (error) {
+    console.error(`Error executing ${method}:`, error);
     return { success: false, error: error.message };
   }
 });
+
