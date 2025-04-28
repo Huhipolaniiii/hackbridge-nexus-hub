@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -81,6 +82,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       </div>
     );
   }
+
+  // Adding back the isActive function that was missing
+  const isActive = (path: string): boolean => {
+    return location.pathname === path;
+  };
 
   // Base menu items always shown
   const baseMenuItems = [
