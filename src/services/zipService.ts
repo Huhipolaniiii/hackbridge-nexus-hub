@@ -107,11 +107,15 @@ export const zipService = {
         "references": [{ "path": "./tsconfig.node.json" }]
       }, null, 2));
 
-      // Add project info
+      // Add project info and README with launch instructions
       zip.file("README.md", 
         `# HackBridge Platform\n\n` +
         `Export Date: ${projectData.exportDate}\n` +
         `Platform Version: 1.0.0\n\n` +
+        `## Quick Start\n\n` +
+        `1. Make sure you have Node.js installed\n` +
+        `2. Double-click 'start-app.bat' to launch the desktop application\n` +
+        `3. The app will automatically install dependencies if needed\n\n` +
         `## Key Features\n\n` +
         `- Secure Python code execution environment\n` +
         `- Real-time code analysis\n` +
@@ -122,6 +126,20 @@ export const zipService = {
         `- Courses: ${projectData.courses.length}\n` +
         `- Tasks: ${projectData.tasks.length}\n` +
         `\nFor detailed information about Python integration, see PYTHON_INTEGRATION.md`
+      );
+      
+      // Add batch file for launching Electron app
+      zip.file("start-app.bat", 
+        "@echo off\n" +
+        "echo Starting HackBridge Desktop Application...\n" +
+        "cd %~dp0\n" +
+        "if not exist node_modules (\n" +
+        "  echo Installing dependencies...\n" +
+        "  npm install\n" +
+        ")\n" +
+        "echo Launching application...\n" +
+        "npm run electron:dev\n" +
+        "pause"
       );
       
       // Generate and download the zip file
