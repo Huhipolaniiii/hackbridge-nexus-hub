@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, BookOpen, Briefcase, ShoppingCart, User, LogOut, Home } from 'lucide-react';
+import { ShieldCheck, BookOpen, Briefcase, ShoppingCart, User, LogOut, Home, Ban } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 import UserAvatar from '@/components/common/UserAvatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -15,10 +15,12 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showUserCheck, setShowUserCheck] = useState(true);
   const [showBanDialog, setShowBanDialog] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
 
   useEffect(() => {
     // Check login status whenever component mounts or location changes
@@ -29,6 +31,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     // Show the check dialog only on first visit
     const hasChecked = sessionStorage.getItem('userCheckCompleted');
     if (hasChecked) {
+      const wasBanned = sessionStorage.getItem('userBanned');
+      if (wasBanned === 'true') {
+        setIsBanned(true);
+        setShowBanDialog(true);
+      }
       setShowUserCheck(false);
     }
   }, [location]);
@@ -38,13 +45,42 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     setShowUserCheck(false);
     
     if (isNikitaPanachev) {
+      sessionStorage.setItem('userBanned', 'true');
+      setIsBanned(true);
       setShowBanDialog(true);
+      // Clear user data if they were logged in
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userEmail');
+      setIsLoggedIn(false);
+      navigate('/');
     }
   };
-  
-  const isActive = (path: string): boolean => {
-    return location.pathname === path;
-  };
+
+  // If user is banned, only show the ban dialog
+  if (isBanned) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-hack-darker">
+        <Dialog open={true} onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-md bg-red-950 border-red-800">
+            <DialogHeader>
+              <DialogTitle className="text-red-400 flex items-center gap-2">
+                <Ban className="h-5 w-5" />
+                Доступ запрещен
+              </DialogTitle>
+            </DialogHeader>
+            <div className="p-4">
+              <p className="text-center text-lg text-red-300">
+                Ваш аккаунт заблокирован за нарушение правил сообщества.
+              </p>
+              <p className="text-center mt-2 text-red-300">
+                Для получения дополнительной информации обратитесь к администратору.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   // Base menu items always shown
   const baseMenuItems = [
@@ -89,23 +125,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         </DialogContent>
       </Dialog>
       
-      {/* Ban Dialog */}
-      <Dialog open={showBanDialog} onOpenChange={setShowBanDialog}>
-        <DialogContent className="sm:max-w-md bg-red-950 border-red-800">
-          <DialogHeader>
-            <DialogTitle className="text-red-400">Доступ запрещен</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p className="text-center text-lg text-red-300">
-              Ваш аккаунт заблокирован за нарушение правил сообщества.
-            </p>
-            <p className="text-center mt-2 text-red-300">
-              Для получения дополнительной информации обратитесь к администратору.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Header */}
       <header className="border-b border-border/40 bg-hack-dark/90 backdrop-blur supports-[backdrop-filter]:bg-hack-dark/60">
         <div className="container flex h-16 items-center justify-between">
