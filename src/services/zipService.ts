@@ -52,19 +52,68 @@ export const zipService = {
     try {
       const zip = new JSZip();
       
-      // Add project data files
-      zip.file("project-data/users.json", JSON.stringify(projectData.users, null, 2));
-      zip.file("project-data/courses.json", JSON.stringify(projectData.courses, null, 2));
-      zip.file("project-data/tasks.json", JSON.stringify(projectData.tasks, null, 2));
+      // Add project source files
+      zip.file("src/services/zipService.ts", `// Project source files\n${sourceFiles.zipService}`);
+      zip.file("src/pages/AdminPanel.tsx", sourceFiles.adminPanel);
+      zip.file("src/python/sample.py", sourceFiles.pythonSample);
+      zip.file("public/robots.txt", sourceFiles.robots);
+      zip.file("index.html", sourceFiles.indexHtml);
+      zip.file("src/components/ui/tabs.tsx", sourceFiles.tabs);
+      zip.file("src/components/ui/sheet.tsx", sourceFiles.sheet);
+      zip.file("src/components/ui/sidebar.tsx", sourceFiles.sidebar);
       
+      // Add project data files
+      const dataFolder = zip.folder("project-data");
+      dataFolder?.file("users.json", JSON.stringify(projectData.users, null, 2));
+      dataFolder?.file("courses.json", JSON.stringify(projectData.courses, null, 2));
+      dataFolder?.file("tasks.json", JSON.stringify(projectData.tasks, null, 2));
+      
+      // Add configuration files
+      zip.file("package.json", JSON.stringify({
+        "name": "hackbridge-nexus-hub",
+        "private": true,
+        "version": "1.0.0",
+        "dependencies": {
+          "@hookform/resolvers": "^3.9.0",
+          "@radix-ui/react-tabs": "^1.1.0",
+          "jszip": "^3.10.1",
+          "react": "^18.3.1",
+          "react-dom": "^18.3.1",
+          // ... и другие зависимости
+        }
+      }, null, 2));
+      
+      zip.file("tsconfig.json", JSON.stringify({
+        "compilerOptions": {
+          "target": "ES2020",
+          "useDefineForClassFields": true,
+          "lib": ["ES2020", "DOM", "DOM.Iterable"],
+          "module": "ESNext",
+          "skipLibCheck": true,
+          "moduleResolution": "bundler",
+          "allowImportingTsExtensions": true,
+          "resolveJsonModule": true,
+          "isolatedModules": true,
+          "noEmit": true,
+          "jsx": "react-jsx",
+          "strict": true,
+          "noUnusedLocals": true,
+          "noUnusedParameters": true,
+          "noFallthroughCasesInSwitch": true
+        },
+        "include": ["src"],
+        "references": [{ "path": "./tsconfig.node.json" }]
+      }, null, 2));
+
       // Add project info
-      zip.file("project-info.txt", 
-        `HackBridge Platform Export\n` +
-        `Version: 1.0.0\n` +
+      zip.file("README.md", 
+        `# HackBridge Platform\n\n` +
         `Export Date: ${projectData.exportDate}\n` +
-        `Users Count: ${projectData.users.length}\n` +
-        `Courses Count: ${projectData.courses.length}\n` +
-        `Tasks Count: ${projectData.tasks.length}`
+        `Platform Version: 1.0.0\n\n` +
+        `## Project Statistics\n` +
+        `- Users: ${projectData.users.length}\n` +
+        `- Courses: ${projectData.courses.length}\n` +
+        `- Tasks: ${projectData.tasks.length}\n`
       );
       
       // Generate and download the zip file
@@ -77,4 +126,16 @@ export const zipService = {
       return false;
     }
   }
+};
+
+// Project source files content
+const sourceFiles = {
+  zipService: `// Current file content...\n${new TextEncoder().encode(document.querySelector('[data-filepath="src/services/zipService.ts"]')?.textContent || '')}`,
+  adminPanel: `// Admin panel component...\n${new TextEncoder().encode(document.querySelector('[data-filepath="src/pages/AdminPanel.tsx"]')?.textContent || '')}`,
+  pythonSample: `// Python integration sample...\n${new TextEncoder().encode(document.querySelector('[data-filepath="src/python/sample.py"]')?.textContent || '')}`,
+  robots: document.querySelector('[data-filepath="public/robots.txt"]')?.textContent || '',
+  indexHtml: document.querySelector('[data-filepath="index.html"]')?.textContent || '',
+  tabs: document.querySelector('[data-filepath="src/components/ui/tabs.tsx"]')?.textContent || '',
+  sheet: document.querySelector('[data-filepath="src/components/ui/sheet.tsx"]')?.textContent || '',
+  sidebar: document.querySelector('[data-filepath="src/components/ui/sidebar.tsx"]')?.textContent || '',
 };
