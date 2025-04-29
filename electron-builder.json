@@ -17,7 +17,12 @@
     "target": ["dmg", "zip"]
   },
   "win": {
-    "target": ["nsis"]
+    "target": ["nsis", "portable"],
+    "icon": "public/favicon.ico",
+    "artifactName": "HackBridge-Setup-${version}.${ext}"
+  },
+  "portable": {
+    "artifactName": "HackBridge-Portable-${version}.${ext}"
   },
   "linux": {
     "target": ["AppImage", "deb"],
@@ -25,7 +30,10 @@
   },
   "nsis": {
     "oneClick": false,
-    "allowToChangeInstallationDirectory": true
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "HackBridge"
   },
   "extraResources": [
     {

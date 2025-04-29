@@ -8,9 +8,14 @@ contextBridge.exposeInMainWorld(
     executePythonBridge: (method, ...args) => {
       console.log(`Preload: calling python-bridge-execute with method ${method}`);
       return ipcRenderer.invoke('python-bridge-execute', method, ...args);
+    },
+    getAppVersion: () => {
+      return ipcRenderer.invoke('get-app-version');
+    },
+    checkForUpdates: () => {
+      return ipcRenderer.invoke('check-for-updates');
     }
   }
 );
 
 console.log('Preload script executed, electronAPI exposed');
-

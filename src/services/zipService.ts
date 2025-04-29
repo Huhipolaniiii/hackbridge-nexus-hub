@@ -1,3 +1,4 @@
+
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -220,6 +221,145 @@ export const zipService = {
         "npm install\n" +
         "npm run electron:dev\n" +
         "pause"
+      );
+      
+      // Add build-exe.bat file for generating the executable
+      zip.file("build-exe.bat", 
+        "@echo off\n" +
+        "echo Building HackBridge Executable...\n\n" +
+        "IF \"%~d0\"==\"\\\\\" (\n" +
+        "  C:\n" +
+        "  CD %TEMP%\\HackBridge\n" +
+        "  MD %TEMP%\\HackBridge 2>nul\n" +
+        "  XCOPY \"%~dp0\\*\" \"%TEMP%\\HackBridge\\\" /E /I /Y\n" +
+        "  cd %TEMP%\\HackBridge\n" +
+        ") ELSE (\n" +
+        "  cd %~dp0\n" +
+        ")\n\n" +
+        "echo Installing dependencies...\n" +
+        "call npm install\n\n" +
+        "echo Building application...\n" +
+        "call npm run build\n\n" +
+        "echo Building executable...\n" +
+        "call npm run electron:build\n\n" +
+        "echo The executable has been created in the release folder.\n" +
+        "explorer %CD%\\release\n" +
+        "pause"
+      );
+      
+      // Update package.json to include build script
+      zip.file("package.json", JSON.stringify({
+        "name": "hackbridge-nexus-hub",
+        "private": true,
+        "version": "1.0.0",
+        "scripts": {
+          "dev": "vite",
+          "build": "tsc && vite build",
+          "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:8080 && node electron/electron-dev.js\"",
+          "electron:build": "electron-builder",
+          "build:win": "tsc && vite build && electron-builder --win"
+        },
+        "dependencies": {
+          "@hookform/resolvers": "^3.9.0",
+          "@radix-ui/react-tabs": "^1.1.0",
+          "jszip": "^3.10.1",
+          "react": "^18.3.1",
+          "react-dom": "^18.3.1",
+          "electron": "^29.1.0",
+          "concurrently": "^8.2.2",
+          "wait-on": "^7.2.0",
+          "file-saver": "^2.0.5"
+        },
+        "devDependencies": {
+          "electron-builder": "^24.12.0"
+        }
+      }, null, 2));
+      
+      // Add EXE info to the launcher HTML
+      zip.file("launch.html", 
+        `<!DOCTYPE html>
+        <html>
+        <head>
+            <title>HackBridge Launcher</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                    background: #1a1a1a;
+                    color: white;
+                }
+                .container {
+                    text-align: center;
+                    padding: 20px;
+                    border-radius: 8px;
+                    background: #2a2a2a;
+                }
+                .button {
+                    background: #4CAF50;
+                    color: white;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    margin: 10px;
+                    font-size: 16px;
+                }
+                .button:hover {
+                    background: #45a049;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>HackBridge Desktop Launcher</h2>
+                <p>Выберите способ запуска:</p>
+                <button class="button" onclick="runDesktop()">Запустить десктопную версию</button>
+                <button class="button" onclick="runBrowser()">Открыть в браузере</button>
+                <button class="button" onclick="buildExe()">Создать .exe файл</button>
+            </div>
+            <div class="container" style="margin-top:20px; padding:10px;">
+                <p>Для создания .exe файла требуется Node.js и npm. После создания файл появится в папке release.</p>
+            </div>
+            <script>
+                function runDesktop() {
+                    const isWindows = navigator.platform.indexOf('Win') > -1;
+                    if (isWindows) {
+                        try {
+                            const bat = new ActiveXObject('WScript.Shell');
+                            bat.Run('start-app.bat', 1, true);
+                        } catch(e) {
+                            alert('Ошибка запуска: ' + e.message + '. Запустите start-app.bat вручную.');
+                        }
+                    } else {
+                        alert('Запуск десктопной версии доступен только для Windows');
+                    }
+                }
+                
+                function runBrowser() {
+                    window.location.href = 'index.html';
+                }
+                
+                function buildExe() {
+                    const isWindows = navigator.platform.indexOf('Win') > -1;
+                    if (isWindows) {
+                        try {
+                            const bat = new ActiveXObject('WScript.Shell');
+                            bat.Run('build-exe.bat', 1, true);
+                        } catch(e) {
+                            alert('Ошибка запуска: ' + e.message + '. Запустите build-exe.bat вручную.');
+                        }
+                    } else {
+                        alert('Создание .exe файла доступен только для Windows');
+                    }
+                }
+            </script>
+        </body>
+        </html>`
       );
       
       // Generate and download the zip file
