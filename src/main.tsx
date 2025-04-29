@@ -14,11 +14,12 @@ const startApp = () => {
   root.render(<App />);
   
   // Log the runtime environment
-  const isElectron = window.electronAPI !== undefined;
+  const isElectron = 'electronAPI' in window;
   console.log(`Running in ${isElectron ? 'Electron' : 'browser'} mode`);
   
   if (isElectron) {
     console.log("Electron API available");
+    // We could initialize Electron-specific features here
   } else {
     console.info("Running in browser mode, Electron features will be disabled");
   }
@@ -29,4 +30,3 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM fully loaded, starting app');
   startApp();
 });
-

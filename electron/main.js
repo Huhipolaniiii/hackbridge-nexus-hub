@@ -1,5 +1,5 @@
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const url = require('url');
 const pythonBridge = require('../src/electron/pythonBridge');
@@ -77,3 +77,19 @@ ipcMain.handle('python-bridge-execute', async (event, method, ...args) => {
   }
 });
 
+// Handler for getting app version
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
+// Handler for checking updates
+ipcMain.handle('check-for-updates', () => {
+  // This is a placeholder for an update check mechanism
+  // In a real app, you would implement proper update checking logic here
+  return { hasUpdate: false, version: app.getVersion() };
+});
+
+// Handler for opening external links
+ipcMain.handle('open-external-link', (event, url) => {
+  return shell.openExternal(url);
+});

@@ -12,6 +12,9 @@
     "src/electron/**/*",
     "src/python/**/*"
   ],
+  "extraMetadata": {
+    "main": "electron/main.js"
+  },
   "mac": {
     "category": "public.app-category.education",
     "target": ["dmg", "zip"]
@@ -40,5 +43,6 @@
       "from": "src/python",
       "to": "python"
     }
-  ]
+  ],
+  "publish": null
 }

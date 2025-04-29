@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld(
     },
     checkForUpdates: () => {
       return ipcRenderer.invoke('check-for-updates');
+    },
+    openExternalLink: (url) => {
+      return ipcRenderer.invoke('open-external-link', url);
     }
   }
 );
