@@ -1,3 +1,4 @@
+
 import { User } from "@/types/user";
 import { Course } from "@/types/course";
 import { Task } from "@/types/task";
@@ -67,6 +68,9 @@ const mockCourses: Course[] = [
     imageUrl: "/placeholder.svg",
     level: "Intermediate",
     duration: "8 weeks",
+    difficulty: "Средняя",
+    category: "Web",
+    lessonsCount: 8,
     modules: [
       {
         id: "m1",
@@ -89,6 +93,9 @@ const mockCourses: Course[] = [
     imageUrl: "/placeholder.svg",
     level: "Advanced",
     duration: "10 weeks",
+    difficulty: "Сложная",
+    category: "OSINT",
+    lessonsCount: 10,
     modules: [
       {
         id: "m1",
