@@ -13,4 +13,12 @@ export interface Course {
   studentsCount?: number;
   createdAt?: string;
   categories?: string[];
+  rating?: number;
+  level?: string;
+  duration?: string;
+  modules?: Array<{
+    id: string;
+    title: string;
+    content: string;
+  }>;
 }
