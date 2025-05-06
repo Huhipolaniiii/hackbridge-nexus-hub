@@ -13,6 +13,8 @@ interface ElectronAPI {
   getAppVersion: () => Promise<string>;
   checkForUpdates: () => Promise<{hasUpdate: boolean, version: string}>;
   openExternalLink: (url: string) => Promise<void>;
+  saveData: (key: string, data: any) => Promise<void>;
+  loadData: (key: string) => Promise<any>;
 }
 
 // Global window object with Electron API
@@ -26,15 +28,11 @@ declare global {
  * Check if the application is running in Electron
  */
 export const isElectron = (): boolean => {
-  const electronCheck = 'electronAPI' in window;
-  console.log(`Electron check: ${electronCheck ? 'Running in Electron' : 'Running in browser'}`);
-  return electronCheck;
+  return 'electronAPI' in window;
 };
 
 /**
  * Execute a Python bridge method
- * @param method The method name to call
- * @param args Arguments to pass to the method
  */
 export const executePythonBridge = async (method: string, ...args: any[]) => {
   if (!isElectron()) {
@@ -43,10 +41,7 @@ export const executePythonBridge = async (method: string, ...args: any[]) => {
   }
   
   try {
-    console.log(`Calling Electron API method: ${method}`, args);
-    const result = await window.electronAPI!.executePythonBridge(method, ...args);
-    console.log(`Result from ${method}:`, result);
-    return result;
+    return await window.electronAPI!.executePythonBridge(method, ...args);
   } catch (error) {
     console.error('Error executing Python bridge method:', error);
     return { 
@@ -60,30 +55,10 @@ export const executePythonBridge = async (method: string, ...args: any[]) => {
  * Get the application version
  */
 export const getAppVersion = async (): Promise<string | null> => {
-  if (!isElectron()) {
-    return null;
-  }
-  
+  if (!isElectron()) return null;
   try {
     return await window.electronAPI!.getAppVersion();
   } catch (error) {
-    console.error('Error getting app version:', error);
-    return null;
-  }
-};
-
-/**
- * Check for updates
- */
-export const checkForUpdates = async (): Promise<{hasUpdate: boolean, version: string} | null> => {
-  if (!isElectron()) {
-    return null;
-  }
-  
-  try {
-    return await window.electronAPI!.checkForUpdates();
-  } catch (error) {
-    console.error('Error checking for updates:', error);
     return null;
   }
 };
@@ -93,7 +68,6 @@ export const checkForUpdates = async (): Promise<{hasUpdate: boolean, version: s
  */
 export const openExternalLink = async (url: string): Promise<boolean> => {
   if (!isElectron()) {
-    // Fall back to window.open in browser mode
     window.open(url, '_blank');
     return true;
   }
@@ -102,7 +76,33 @@ export const openExternalLink = async (url: string): Promise<boolean> => {
     await window.electronAPI!.openExternalLink(url);
     return true;
   } catch (error) {
-    console.error('Error opening external link:', error);
     return false;
+  }
+};
+
+/**
+ * Save data persistently (in Electron mode)
+ */
+export const saveData = async (key: string, data: any): Promise<boolean> => {
+  if (!isElectron()) return false;
+  
+  try {
+    await window.electronAPI!.saveData(key, data);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * Load data persistently (in Electron mode)
+ */
+export const loadData = async (key: string): Promise<any> => {
+  if (!isElectron()) return null;
+  
+  try {
+    return await window.electronAPI!.loadData(key);
+  } catch (error) {
+    return null;
   }
 };

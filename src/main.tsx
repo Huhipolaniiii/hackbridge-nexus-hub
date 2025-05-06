@@ -18,14 +18,6 @@ const startApp = () => {
   
   // Log the runtime environment
   console.log(`Running in ${isElectron ? 'Electron' : 'browser'} mode`);
-  
-  if (isElectron) {
-    console.log("Electron API available");
-    // Initialize Electron-specific features if needed
-  } else {
-    console.info("Running in browser mode, Electron features will be disabled");
-    // Initialize browser-only features if needed
-  }
 };
 
 // Start the application

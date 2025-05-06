@@ -1,4 +1,3 @@
-
 import { User } from "@/types/user";
 import { Course } from "@/types/course";
 import { Task } from "@/types/task";
@@ -12,22 +11,139 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'hackbridge_current_user'
 };
 
+// Sample mock data for initial setup
+const mockUsers: User[] = [
+  {
+    id: "1",
+    username: "admin",
+    email: "admin@hackbridge.ru",
+    role: "admin",
+    avatarUrl: "/placeholder.svg",
+    rating: 5,
+    balance: 10000,
+    completedTasks: 10,
+    skills: [
+      { name: "Web Security", level: 9 },
+      { name: "Penetration Testing", level: 8 }
+    ],
+    purchasedCourses: ["1", "2"]
+  },
+  {
+    id: "2",
+    username: "user",
+    email: "user@example.com",
+    role: "hacker",
+    avatarUrl: "/placeholder.svg",
+    rating: 4.5,
+    balance: 2500,
+    completedTasks: 5,
+    skills: [
+      { name: "JavaScript", level: 7 },
+      { name: "React", level: 8 }
+    ],
+    purchasedCourses: ["1"]
+  },
+  {
+    id: "3",
+    username: "company",
+    email: "company@example.com",
+    role: "company",
+    avatarUrl: "/placeholder.svg",
+    rating: 4.8,
+    balance: 50000,
+    completedTasks: 0,
+    skills: [],
+    purchasedCourses: []
+  }
+];
+
+const mockCourses: Course[] = [
+  {
+    id: "1",
+    title: "Web Application Security",
+    description: "Learn to secure web applications against common attacks",
+    price: 1000,
+    rating: 4.8,
+    imageUrl: "/placeholder.svg",
+    level: "Intermediate",
+    duration: "8 weeks",
+    modules: [
+      {
+        id: "m1",
+        title: "Introduction to Web Security",
+        content: "Overview of web security principles"
+      },
+      {
+        id: "m2",
+        title: "XSS Attacks",
+        content: "Understanding and preventing cross-site scripting"
+      }
+    ]
+  },
+  {
+    id: "2",
+    title: "Network Penetration Testing",
+    description: "Master the art of network penetration testing",
+    price: 1500,
+    rating: 4.5,
+    imageUrl: "/placeholder.svg",
+    level: "Advanced",
+    duration: "10 weeks",
+    modules: [
+      {
+        id: "m1",
+        title: "Network Basics",
+        content: "Understanding network architectures"
+      },
+      {
+        id: "m2",
+        title: "Reconnaissance Techniques",
+        content: "Methods for gathering information about networks"
+      }
+    ]
+  }
+];
+
+const mockTasks: Task[] = [
+  {
+    id: "1",
+    title: "Find vulnerabilities in our web app",
+    description: "Identify and document security vulnerabilities in our e-commerce application",
+    difficulty: "Средняя",
+    category: "Web",
+    reward: 3000,
+    companyId: "3",
+    companyName: "company",
+    companyLogoUrl: "/placeholder.svg",
+    status: "Открыто"
+  },
+  {
+    id: "2",
+    title: "Mobile app security audit",
+    description: "Perform a comprehensive security audit of our Android application",
+    difficulty: "Сложная",
+    category: "Mobile",
+    reward: 5000,
+    companyId: "3",
+    companyName: "company",
+    companyLogoUrl: "/placeholder.svg",
+    status: "Открыто"
+  }
+];
+
 // Initialize data in localStorage if it doesn't exist
 const initializeData = () => {
   try {
-    // Import mock data for initial setup
-    const { users, courses, tasks } = require('./mockData');
-    
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mockUsers));
     }
     
     if (!localStorage.getItem(STORAGE_KEYS.COURSES)) {
-      localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(courses));
+      localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(mockCourses));
     }
     
     if (!localStorage.getItem(STORAGE_KEYS.TASKS)) {
-      localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+      localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(mockTasks));
     }
     
     console.log('Data service initialized');
