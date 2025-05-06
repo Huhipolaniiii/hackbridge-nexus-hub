@@ -16,6 +16,7 @@ const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [purchasedCourses, setPurchasedCourses] = useState<Course[]>([]);
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]); // Added tasks state
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isCompanyAccount, setIsCompanyAccount] = useState(false);
@@ -42,6 +43,11 @@ const Profile = () => {
         
         // Get completed tasks - similar to above
         setCompletedTasks([]);
+        
+        // Get all tasks for company accounts
+        if (currentUser.role === 'company') {
+          setTasks(taskService.getAllTasks());
+        }
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {
@@ -200,8 +206,8 @@ const Profile = () => {
               <CardContent>
                 {isCompanyAccount ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {tasks.filter(task => task.companyName === user.username).length > 0 ? (
-                      tasks.filter(task => task.companyName === user.username).map(task => (
+                    {tasks.filter(task => task.companyName === user?.username).length > 0 ? (
+                      tasks.filter(task => task.companyName === user?.username).map(task => (
                         <Card key={task.id} className="hack-card hover-scale cursor-pointer">
                           <CardContent className="p-4">
                             <Badge className="mb-2 bg-blue-500/20 text-blue-500 hover:bg-blue-500/30">
