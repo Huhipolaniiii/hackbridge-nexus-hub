@@ -17,6 +17,13 @@ contextBridge.exposeInMainWorld(
     },
     openExternalLink: (url) => {
       return ipcRenderer.invoke('open-external-link', url);
+    },
+    // New methods for persistent storage
+    saveData: (key, data) => {
+      return ipcRenderer.invoke('save-data', key, data);
+    },
+    loadData: (key) => {
+      return ipcRenderer.invoke('load-data', key);
     }
   }
 );

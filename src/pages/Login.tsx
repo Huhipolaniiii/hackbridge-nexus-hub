@@ -1,189 +1,122 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LogIn, AlertTriangle } from 'lucide-react';
-import MainLayout from '@/components/layout/MainLayout';
-import { simulateApiRequest } from '@/services/mockData';
-
-// Define exact admin credentials
-const ADMIN_EMAIL = "admin@hackbridge.ru";
-const ADMIN_PASSWORD = "admin123";
-
-const formSchema = z.object({
-  email: z.string().email({ message: 'Введите корректный email' }),
-  password: z.string().min(6, { message: 'Пароль должен содержать минимум 6 символов' }),
-});
+import { Label } from '@/components/ui/label';
+import { userService } from '@/services/dataService';
+import { toast } from 'sonner';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
-    
     try {
-      // In a real app, we would call an API
-      await simulateApiRequest(null);
+      const user = userService.loginUser(email, password);
       
-      // Strict admin login check - using exact string comparison
-      if (values.email === ADMIN_EMAIL && values.password === ADMIN_PASSWORD) {
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('userName', 'Администратор');
-        localStorage.setItem('userEmail', ADMIN_EMAIL);
-        localStorage.setItem('userBalance', '100000');
-        localStorage.setItem('userRating', '10');
-        localStorage.setItem('userCompletedTasks', '0');
-        localStorage.setItem('userSkills', JSON.stringify([]));
-        localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
+      if (user) {
+        toast.success('Успешный вход в систему!');
         
-        toast.success('Вы успешно вошли как администратор');
-        navigate('/admin');
-        return;
+        // Redirect based on role
+        if (user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/profile');
+        }
       }
-      
-      // If it contains "admin" in email but credentials don't match exactly, reject
-      if (values.email.toLowerCase().includes('admin') || 
-          values.email.toLowerCase().replace(/\s/g, '').includes('admin') ||
-          values.email.toLowerCase().includes('админ')) {
-        toast.error('Неверные учетные данные администратора');
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Mock login for regular users
-      localStorage.setItem('userRole', 'hacker');
-      localStorage.setItem('userName', 'Иван Иванов');
-      localStorage.setItem('userEmail', values.email);
-      localStorage.setItem('userBalance', '5000');
-      localStorage.setItem('userRating', '4.7');
-      localStorage.setItem('userCompletedTasks', '12');
-      localStorage.setItem('userSkills', JSON.stringify([
-        { name: 'Web Security', level: 7 },
-        { name: 'Penetration Testing', level: 5 },
-        { name: 'Network Security', level: 6 },
-      ]));
-      localStorage.setItem('userPurchasedCourses', JSON.stringify([]));
-      
-      toast.success('Вы успешно вошли в систему');
-      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Ошибка при входе');
+      toast.error('Ошибка входа в систему');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
-  
+
   return (
-    <MainLayout>
-      <div className="max-w-md mx-auto pt-8 pb-16">
-        <Card className="hack-card">
-          <CardHeader>
-            <CardTitle className="text-2xl">Вход в аккаунт</CardTitle>
-            <CardDescription>
-              Введите ваши данные для доступа к платформе
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert className="mb-4 bg-yellow-500/20 text-yellow-500 border-yellow-500/30">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="text-sm mt-0">
-                Данные для входа администратора:<br />
-                Email: <span className="font-mono">admin@hackbridge.ru</span><br />
-                Пароль: <span className="font-mono">admin123</span>
-              </AlertDescription>
-            </Alert>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="example@email.com" 
-                          type="email" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Пароль</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="******" 
-                          type="password" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <LogIn className="mr-2 h-4 w-4 animate-spin" /> 
-                      Вход...
-                    </span>
-                  ) : (
-                    <span className="flex items-center">
-                      <LogIn className="mr-2 h-4 w-4" /> 
-                      Войти
-                    </span>
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center w-full">
-              <span className="text-sm text-muted-foreground">
-                Еще нет аккаунта?{' '}
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-hack-blue"
-                  onClick={() => navigate('/register')}
-                >
-                  Зарегистрироваться
-                </Button>
-              </span>
+    <div className="flex min-h-screen items-center justify-center bg-hack-darker p-4">
+      <Card className="w-full max-w-md hack-card animate-scale-in">
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex justify-center mb-4">
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/placeholder.svg" alt="Logo" className="h-10 w-10" />
+              <span className="text-xl font-bold tracking-tight text-hack-blue">HackBridge</span>
+            </Link>
+          </div>
+          <CardTitle className="text-2xl">Вход в аккаунт</CardTitle>
+          <CardDescription>
+            Введите ваш email и пароль для входа
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="example@hackbridge.ru" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required 
+              />
             </div>
-          </CardFooter>
-        </Card>
-      </div>
-    </MainLayout>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Пароль</Label>
+                <Link 
+                  to="/register" 
+                  className="text-xs text-hack-blue hover:underline"
+                >
+                  Забыли пароль?
+                </Link>
+              </div>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            
+            {/* For demonstration purposes */}
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded">
+              <p className="text-xs text-muted-foreground">
+                <strong>Admin:</strong> admin@hackbridge.ru / admin123<br />
+                <strong>User:</strong> user@hackbridge.ru / user123
+              </p>
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Вход...' : 'Войти'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex flex-wrap items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            <span>Нет аккаунта? </span>
+            <Link 
+              to="/register" 
+              className="text-hack-blue hover:underline"
+            >
+              Зарегистрироваться
+            </Link>
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { User } from '@/types/user';
 import { Course } from '@/types/course';
 import { Task } from '@/types/task';
-import { simulateApiRequest, courses, tasks } from '@/services/mockData';
+import { userService, courseService, taskService } from '@/services/dataService';
 import { User as UserIcon, BookOpen, Award, CreditCard, Settings } from 'lucide-react';
 
 const Profile = () => {
@@ -25,55 +24,24 @@ const Profile = () => {
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        // Check if we have a company account
-        const userRole = localStorage.getItem('userRole');
-        const userName = localStorage.getItem('userName') || '';
-        const userEmail = localStorage.getItem('userEmail') || '';
+        // Get current user from our data service
+        const currentUser = userService.getCurrentUser();
         
-        setIsCompanyAccount(userRole === 'company');
-        
-        // Create user data based on local storage
-        if (userRole === 'company') {
-          // Company data
-          const companyData = {
-            id: 'company1',
-            username: userName,
-            email: userEmail,
-            role: 'company' as 'company',
-            avatarUrl: '/placeholder.svg',
-            rating: 0,
-            balance: 0,
-            completedTasks: 0,
-            skills: [],
-            purchasedCourses: [],
-          };
-          
-          await simulateApiRequest(companyData);
-          setUser(companyData);
-        } else {
-          // Regular user data
-          const userData = {
-            id: 'user1',
-            username: userName,
-            email: userEmail,
-            role: 'hacker' as 'hacker',
-            avatarUrl: '/placeholder.svg',
-            rating: 0,
-            balance: 0,
-            completedTasks: 0,
-            skills: [],
-            purchasedCourses: [],
-          };
-          
-          await simulateApiRequest(userData);
-          setUser(userData);
-          
-          // Initialize empty courses
-          setPurchasedCourses([]);
-          
-          // Initialize empty tasks
-          setCompletedTasks([]);
+        if (!currentUser) {
+          // Redirect to login if not authenticated
+          window.location.href = '/login';
+          return;
         }
+        
+        setIsCompanyAccount(currentUser.role === 'company');
+        setUser(currentUser);
+        
+        // Get purchased courses - in a real app, this would come from the user's data
+        // For now, just use sample data
+        setPurchasedCourses([]);
+        
+        // Get completed tasks - similar to above
+        setCompletedTasks([]);
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {

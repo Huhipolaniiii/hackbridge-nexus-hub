@@ -10,10 +10,11 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { simulateApiRequest, courses as allCourses } from '@/services/mockData';
+import { courseService, userService } from '@/services/dataService';
 import { Course } from '@/types/course';
 import { toast } from 'sonner';
 import { ShoppingCart, Trash, CreditCard } from 'lucide-react';
+import { User } from '@/types/user';
 
 interface CartItem {
   id: string;
@@ -26,20 +27,25 @@ interface CartItem {
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userBalance, setUserBalance] = useState(0);
+  const [user, setUser] = useState<User | null>(null);
   
   useEffect(() => {
     const fetchCartItems = async () => {
       setIsLoading(true);
       try {
+        // Get current user
+        const currentUser = userService.getCurrentUser();
+        if (!currentUser) {
+          toast.error('Необходимо войти в систему');
+          window.location.href = '/login';
+          return;
+        }
+        
+        setUser(currentUser);
+        
         // Get cart from localStorage
         const cartString = localStorage.getItem('userCart');
         const userCart = cartString ? JSON.parse(cartString) : [];
-        
-        // Get user balance
-        const balanceString = localStorage.getItem('userBalance');
-        const balance = balanceString ? parseFloat(balanceString) : 0;
-        setUserBalance(balance);
         
         // Ensure all cart items have a valid imageUrl
         const updatedCart = userCart.map((item: CartItem) => {
@@ -79,31 +85,36 @@ const Cart = () => {
   };
   
   const handleCheckout = () => {
+    if (!user) {
+      toast.error('Необходимо войти в систему');
+      return;
+    }
+    
     const total = calculateTotal();
     
     // Check if user has enough balance
-    if (userBalance < total) {
+    if (user.balance < total) {
       toast.error('Недостаточно средств на балансе');
       return;
     }
     
     // Update user balance
-    const newBalance = userBalance - total;
-    localStorage.setItem('userBalance', newBalance.toString());
-    setUserBalance(newBalance);
+    const newBalance = user.balance - total;
+    const updatedUser = {
+      ...user,
+      balance: newBalance
+    };
     
     // Update purchased courses
-    const purchasedCoursesString = localStorage.getItem('userPurchasedCourses');
-    let purchasedCourses = purchasedCoursesString ? JSON.parse(purchasedCoursesString) : [];
-    
-    // Add course IDs to purchased courses
     cartItems.forEach(item => {
-      if (item.type === 'course' && !purchasedCourses.includes(item.id)) {
-        purchasedCourses.push(item.id);
+      if (item.type === 'course') {
+        updatedUser.purchasedCourses = [...updatedUser.purchasedCourses, item.id];
       }
     });
     
-    localStorage.setItem('userPurchasedCourses', JSON.stringify(purchasedCourses));
+    // Save user data
+    userService.updateUser(updatedUser);
+    setUser(updatedUser);
     
     toast.success('Покупка успешно совершена!');
     setCartItems([]);
@@ -188,9 +199,9 @@ const Cart = () => {
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Ваш баланс:</span>
-                    <span>{userBalance} ₽</span>
+                    <span>{user?.balance || 0} ₽</span>
                   </div>
-                  {userBalance < calculateTotal() && (
+                  {user && user.balance < calculateTotal() && (
                     <div className="text-sm text-red-500 font-medium">
                       Недостаточно средств на балансе
                     </div>
@@ -200,7 +211,7 @@ const Cart = () => {
                   <Button 
                     className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black gap-2"
                     onClick={handleCheckout}
-                    disabled={userBalance < calculateTotal()}
+                    disabled={!user || user.balance < calculateTotal()}
                   >
                     <CreditCard className="h-4 w-4" />
                     Оформить заказ

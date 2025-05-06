@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Course } from '@/types/course';
 import { Task } from '@/types/task';
 import { User } from '@/types/user';
-import { courses as mockCourses, tasks as mockTasks, users as mockUsers } from '@/services/mockData';
 import AdminUsersManager from '@/components/admin/AdminUsersManager';
 import AdminTasksManager from '@/components/admin/AdminTasksManager';
 import AdminCoursesManager from '@/components/admin/AdminCoursesManager';
 import { zipService } from '@/services/zipService';
+import { userService, courseService, taskService } from '@/services/dataService';
 import { toast } from 'sonner';
 
 const AdminPanel = () => {
@@ -23,21 +23,34 @@ const AdminPanel = () => {
 
   useEffect(() => {
     // Strict authorization check
-    const userRole = localStorage.getItem('userRole');
-    const userEmail = localStorage.getItem('userEmail');
+    const currentUser = userService.getCurrentUser();
     
     // Only users with role="admin" AND the correct email can access
-    if (userRole !== 'admin' || userEmail !== 'admin@hackbridge.ru') {
+    if (!currentUser || currentUser.role !== 'admin' || currentUser.email !== 'admin@hackbridge.ru') {
       toast.error('У вас нет прав доступа к этой странице');
       window.location.href = '/';
       return;
     }
     
-    setUsers(mockUsers.map(user => ({ ...user, banned: false })));
-    setCourses(mockCourses);
-    setTasks(mockTasks);
+    // Load data from local storage through our data service
+    setUsers(userService.getAllUsers());
+    setCourses(courseService.getAllCourses());
+    setTasks(taskService.getAllTasks());
     setIsLoading(false);
   }, []);
+
+  // Update handler for users that will be passed to AdminUsersManager
+  const handleUpdateUsers = (updatedUsers: User[]) => {
+    // Save updated users to localStorage
+    localStorage.setItem('hackbridge_users', JSON.stringify(updatedUsers));
+    setUsers(updatedUsers);
+  };
+
+  // Update handler for tasks
+  const handleUpdateTasks = (updatedTasks: Task[]) => {
+    localStorage.setItem('hackbridge_tasks', JSON.stringify(updatedTasks));
+    setTasks(updatedTasks);
+  };
 
   const handleDownloadProject = async () => {
     try {
@@ -103,10 +116,10 @@ const AdminPanel = () => {
             <TabsTrigger value="courses">Курсы</TabsTrigger>
           </TabsList>
           <TabsContent value="users" className="space-y-6 mt-6">
-            <AdminUsersManager users={users} setUsers={setUsers} />
+            <AdminUsersManager users={users} setUsers={handleUpdateUsers} />
           </TabsContent>
           <TabsContent value="tasks" className="space-y-6 mt-6">
-            <AdminTasksManager tasks={tasks} setTasks={setTasks} />
+            <AdminTasksManager tasks={tasks} setTasks={handleUpdateTasks} />
           </TabsContent>
           <TabsContent value="courses" className="space-y-6 mt-6">
             <AdminCoursesManager courses={courses} />

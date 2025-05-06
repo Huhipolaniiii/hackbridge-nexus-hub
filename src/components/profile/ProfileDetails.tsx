@@ -2,45 +2,37 @@
 import { useMemo, useEffect, useState } from "react";
 import { Star, Award, User as UserIcon, BookOpen, Briefcase, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { userService } from "@/services/dataService";
+import { User } from "@/types/user";
 
 export default function ProfileDetails() {
-  const [userData, setUserData] = useState({
-    username: "",
-    email: "",
-    avatarUrl: "/placeholder.svg",
-    rating: 0,
-    balance: 0,
-    completedTasks: 0,
-    role: "hacker",
-    skills: [],
-    purchasedCourses: [],
-    activeTasks: []
-  });
+  const [userData, setUserData] = useState<User | null>(null);
 
   useEffect(() => {
-    // Get user data from localStorage
-    const username = localStorage.getItem("userName") || "";
-    const email = localStorage.getItem("userEmail") || "";
-    const userRole = localStorage.getItem("userRole") || "hacker";
-    
-    setUserData({
-      username,
-      email,
-      avatarUrl: "/placeholder.svg",
-      rating: 0,
-      balance: 0,
-      completedTasks: 0,
-      role: userRole,
-      skills: [],
-      purchasedCourses: [],
-      activeTasks: []
-    });
+    // Get user data from our data service
+    const currentUser = userService.getCurrentUser();
+    if (currentUser) {
+      setUserData(currentUser);
+    }
   }, []);
 
   // Format empty skills list for new users
   const mainSkills = useMemo(() => {
-    return userData.skills?.length ? userData.skills.sort((a, b) => b.level - a.level) : [];
-  }, [userData.skills]);
+    return userData?.skills?.length ? userData.skills.sort((a, b) => b.level - a.level) : [];
+  }, [userData?.skills]);
+
+  if (!userData) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-40 bg-hack-dark rounded-lg"></div>
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-32 bg-hack-dark rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const gradientBg = "bg-gradient-to-r from-hack-blue/70 via-hack-purple to-hack-green/70";
   const glass = "backdrop-blur-md bg-white/5 border border-white/10 shadow-xl";
@@ -58,7 +50,7 @@ export default function ProfileDetails() {
           <h2 className="text-2xl font-bold text-gradient animate-fade-in">{userData.username}</h2>
           <div className="flex gap-3 items-center">
             <Badge variant="secondary" className="gap-1">
-              <UserIcon className="text-hack-blue" size={16} /> {userData.role === 'hacker' ? 'Хакер' : 'Компания'}
+              <UserIcon className="text-hack-blue" size={16} /> {userData.role === 'hacker' ? 'Хакер' : userData.role === 'company' ? 'Компания' : 'Админ'}
             </Badge>
             <Badge variant="secondary" className="gap-1">
               <Award className="text-hack-green" size={16} /> Рейтинг: {userData.rating}
@@ -80,13 +72,13 @@ export default function ProfileDetails() {
           </div>
           <ul className="space-y-2">
             {userData.purchasedCourses?.length > 0 ? (
-              userData.purchasedCourses.map((course: any) =>
+              userData.purchasedCourses.map((courseId: string) =>
                 <li
-                  key={course.id}
+                  key={courseId}
                   className="rounded-md px-3 py-2 bg-hack-dark/60 hover:scale-105 hover:bg-hack-blue/10 transition-all duration-200 shadow"
                 >
-                  <span className="font-medium">{course.title}</span>
-                  <Badge variant="outline" className="ml-2">{course.difficulty}</Badge>
+                  <span className="font-medium">Курс #{courseId}</span>
+                  <Badge variant="outline" className="ml-2">Базовый</Badge>
                 </li>
               )
             ) : (
@@ -101,16 +93,10 @@ export default function ProfileDetails() {
             <span className="font-semibold">Активные задания</span>
           </div>
           <ul className="space-y-2">
-            {userData.activeTasks?.length > 0 ? (
-              userData.activeTasks.map((task: any) =>
-                <li
-                  key={task.id}
-                  className="rounded-md px-3 py-2 bg-hack-dark/60 hover:scale-105 hover:bg-hack-green/10 transition-all duration-200 shadow"
-                >
-                  <span className="font-medium">{task.title}</span>
-                  <Badge variant="outline" className="ml-2">{task.reward}₽</Badge>
-                </li>
-              )
+            {userData.role === 'company' ? (
+              <li className="text-muted-foreground text-sm">
+                Создайте задания для хакеров на странице заданий
+              </li>
             ) : (
               <li className="text-muted-foreground text-sm">Нет активных заданий</li>
             )}
