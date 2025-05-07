@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,6 +45,7 @@ const Courses = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
   const [sortBy, setSortBy] = useState('popular');
+  const [visibleCoursesCount, setVisibleCoursesCount] = useState(6);
 
   const { data: coursesData, isLoading } = useQuery({
     queryKey: ['courses'],
@@ -64,6 +66,10 @@ const Courses = () => {
         ? prev.filter(c => c !== category) 
         : [...prev, category]
     );
+  };
+
+  const loadMoreCourses = () => {
+    setVisibleCoursesCount(prev => prev + 6);
   };
 
   const filteredCourses = React.useMemo(() => {
@@ -99,6 +105,10 @@ const Courses = () => {
         }
       });
   }, [coursesData, searchQuery, selectedCategories, selectedDifficulty, sortBy]);
+
+  // Only show a subset of courses initially, more are loaded when button is clicked
+  const visibleCourses = filteredCourses.slice(0, visibleCoursesCount);
+  const hasMoreCoursesToLoad = visibleCourses.length < filteredCourses.length;
 
   return (
     <MainLayout>
@@ -210,6 +220,7 @@ const Courses = () => {
                     setSelectedCategories([]);
                     setSelectedDifficulty('');
                     setSortBy('popular');
+                    setVisibleCoursesCount(6);
                   }}
                 >
                   Сбросить фильтры
@@ -245,9 +256,9 @@ const Courses = () => {
                       </div>
                     ))}
                   </div>
-                ) : filteredCourses.length > 0 ? (
+                ) : visibleCourses.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredCourses.map((course, index) => (
+                    {visibleCourses.map((course, index) => (
                       <div 
                         key={course.id} 
                         className="animate-fade-in" 
@@ -284,7 +295,7 @@ const Courses = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredCourses
                       .sort((a, b) => (b.studentsCount || 0) - (a.studentsCount || 0))
-                      .slice(0, 6)
+                      .slice(0, visibleCoursesCount)
                       .map((course, index) => (
                         <div 
                           key={course.id} 
@@ -315,7 +326,7 @@ const Courses = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredCourses
                       .sort((a, b) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime())
-                      .slice(0, 6)
+                      .slice(0, visibleCoursesCount)
                       .map((course, index) => (
                         <div 
                           key={course.id} 
@@ -330,9 +341,13 @@ const Courses = () => {
               </TabsContent>
             </Tabs>
             
-            {filteredCourses.length > 0 && (
+            {hasMoreCoursesToLoad && (
               <div className="flex justify-center animate-fade-in animation-delay-500">
-                <Button variant="outline" className="gap-2 hover-scale transition-all duration-300">
+                <Button 
+                  variant="outline" 
+                  className="gap-2 hover-scale transition-all duration-300"
+                  onClick={loadMoreCourses}
+                >
                   Загрузить ещё
                   <ChevronRight className="h-4 w-4" />
                 </Button>

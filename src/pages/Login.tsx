@@ -24,6 +24,11 @@ const Login = () => {
       if (user) {
         toast.success('Успешный вход в систему!');
         
+        // Make sure user data is stored correctly including purchased courses
+        if (user.purchasedCourses && user.purchasedCourses.length > 0) {
+          localStorage.setItem('userPurchasedCourses', JSON.stringify(user.purchasedCourses));
+        }
+        
         // Redirect based on role
         if (user.role === 'admin') {
           navigate('/admin');

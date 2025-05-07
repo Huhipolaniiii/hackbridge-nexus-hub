@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [purchasedCourses, setPurchasedCourses] = useState<Course[]>([]);
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]); // Added tasks state
+  const [tasks, setTasks] = useState<Task[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isCompanyAccount, setIsCompanyAccount] = useState(false);
@@ -37,9 +38,15 @@ const Profile = () => {
         setIsCompanyAccount(currentUser.role === 'company');
         setUser(currentUser);
         
-        // Get purchased courses - in a real app, this would come from the user's data
-        // For now, just use sample data
-        setPurchasedCourses([]);
+        // Get purchased courses - fetch from mock data for demo
+        if (currentUser.purchasedCourses && currentUser.purchasedCourses.length > 0) {
+          // Get courses by IDs from the courseService
+          const allCourses = courseService.getAllCourses();
+          const userPurchasedCourses = allCourses.filter(course => 
+            currentUser.purchasedCourses.includes(course.id)
+          );
+          setPurchasedCourses(userPurchasedCourses);
+        }
         
         // Get completed tasks - similar to above
         setCompletedTasks([]);

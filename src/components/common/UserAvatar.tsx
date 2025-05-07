@@ -13,6 +13,7 @@ import { User, LogOut, Settings, Building, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { userService } from '@/services/dataService';
 
 const UserAvatar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -23,40 +24,52 @@ const UserAvatar = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Check local storage for user login status
-    const userRole = localStorage.getItem('userRole');
-    const storedUserName = localStorage.getItem('userName');
-    const storedUserEmail = localStorage.getItem('userEmail');
-    const bannedStatus = localStorage.getItem('userBanned') === 'true';
+    // Check if user is logged in using userService
+    const currentUser = userService.getCurrentUser();
     
-    if (userRole) {
+    if (currentUser) {
       setIsLoggedIn(true);
-      setUserType(userRole as 'hacker' | 'company' | 'admin');
-      setIsBanned(bannedStatus);
-      
-      // Set user details from localStorage
-      setUserName(storedUserName || '');
-      setUserEmail(storedUserEmail || '');
+      setUserType(currentUser.role as 'hacker' | 'company' | 'admin');
+      setUserName(currentUser.username || '');
+      setUserEmail(currentUser.email || '');
+      setIsBanned(currentUser.banned || false);
       
       // If user is banned, show warning
-      if (bannedStatus && userRole !== 'admin') {
+      if (currentUser.banned && currentUser.role !== 'admin') {
         toast.error('Ваш аккаунт заблокирован администратором', {
           duration: 5000,
           id: 'banned-account'
         });
       }
     } else {
-      setIsLoggedIn(false);
-      setUserType(null);
-      setUserName('');
-      setUserEmail('');
-      setIsBanned(false);
+      // Check local storage as fallback
+      const userRole = localStorage.getItem('userRole');
+      const storedUserName = localStorage.getItem('userName');
+      const storedUserEmail = localStorage.getItem('userEmail');
+      const bannedStatus = localStorage.getItem('userBanned') === 'true';
+      
+      if (userRole) {
+        setIsLoggedIn(true);
+        setUserType(userRole as 'hacker' | 'company' | 'admin');
+        setIsBanned(bannedStatus);
+        
+        // Set user details from localStorage
+        setUserName(storedUserName || '');
+        setUserEmail(storedUserEmail || '');
+      } else {
+        setIsLoggedIn(false);
+        setUserType(null);
+        setUserName('');
+        setUserEmail('');
+        setIsBanned(false);
+      }
     }
   }, []);
   
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUserType(null);
+    // Clear user data from localStorage
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
@@ -67,6 +80,10 @@ const UserAvatar = () => {
     localStorage.removeItem('userPurchasedCourses');
     localStorage.removeItem('userCart');
     localStorage.removeItem('userBanned');
+    
+    // Also clear from userService
+    userService.logoutUser();
+    
     toast.success('Вы успешно вышли из системы');
     navigate('/');
   };
