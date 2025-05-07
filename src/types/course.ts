@@ -21,4 +21,15 @@ export interface Course {
     title: string;
     content: string;
   }>;
+  quizzes?: Array<{
+    id: string;
+    title: string;
+    questions: Array<{
+      id: string;
+      question: string;
+      options: string[];
+      correctAnswer: number;
+    }>;
+    completed?: boolean;
+  }>;
 }

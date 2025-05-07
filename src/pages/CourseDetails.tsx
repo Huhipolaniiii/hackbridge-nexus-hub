@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -9,8 +8,10 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { simulateApiRequest, courses } from '@/services/mockData';
 import { Course } from '@/types/course';
+import QuizComponent from '@/components/courses/QuizComponent';
 import { ShoppingCart, BookOpen, Clock, User, CheckCircle, Star, Play, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { userService } from '@/services/dataService';
 
 const CourseDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,9 @@ const CourseDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isPurchased, setIsPurchased] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null);
+  const [quizProgress, setQuizProgress] = useState<Record<string, number>>({}); 
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -29,7 +33,93 @@ const CourseDetails = () => {
         const foundCourse = allCourses.find(c => c.id === id);
         
         if (foundCourse) {
+          // Add sample quiz data if not present
+          if (!foundCourse.quizzes) {
+            foundCourse.quizzes = [
+              {
+                id: "1",
+                title: "Основы веб-уязвимостей",
+                questions: [
+                  {
+                    id: "q1",
+                    question: "Что из перечисленного НЕ является типом XSS-атаки?",
+                    options: [
+                      "Reflected XSS",
+                      "Stored XSS",
+                      "DOM-based XSS",
+                      "SQL XSS"
+                    ],
+                    correctAnswer: 3
+                  },
+                  {
+                    id: "q2",
+                    question: "Какой HTTP метод обычно используется для отправки форм с конфиденциальными данными?",
+                    options: [
+                      "GET",
+                      "POST",
+                      "PUT",
+                      "HEAD"
+                    ],
+                    correctAnswer: 1
+                  },
+                  {
+                    id: "q3",
+                    question: "Какой из следующих заголовков помогает предотвратить некоторые типы XSS-атак?",
+                    options: [
+                      "X-Content-Type-Options",
+                      "Content-Security-Policy",
+                      "X-Frame-Options",
+                      "Cache-Control"
+                    ],
+                    correctAnswer: 1
+                  }
+                ]
+              },
+              {
+                id: "2",
+                title: "SQL-инъекции",
+                questions: [
+                  {
+                    id: "q4",
+                    question: "Какой оператор используется для комментирования строки в MySQL?",
+                    options: [
+                      "//",
+                      "/* */",
+                      "#",
+                      "-- "
+                    ],
+                    correctAnswer: 3
+                  },
+                  {
+                    id: "q5",
+                    question: "Какой метод защиты от SQL-инъекций наиболее эффективен?",
+                    options: [
+                      "Фильтрация входных данных",
+                      "Использование подготовленных выражений",
+                      "Экранирование специальных символов",
+                      "Отключение вывода ошибок"
+                    ],
+                    correctAnswer: 1
+                  }
+                ]
+              }
+            ];
+          }
+          
           setCourse(foundCourse);
+          
+          // Check if course is purchased
+          const currentUser = userService.getCurrentUser();
+          if (currentUser && currentUser.purchasedCourses) {
+            setIsPurchased(currentUser.purchasedCourses.includes(foundCourse.id));
+          }
+          
+          // Load quiz progress from localStorage
+          const progressKey = `quiz_progress_${foundCourse.id}`;
+          const savedProgress = localStorage.getItem(progressKey);
+          if (savedProgress) {
+            setQuizProgress(JSON.parse(savedProgress));
+          }
         } else {
           toast.error('Курс не найден');
           navigate('/courses');
@@ -90,6 +180,43 @@ const CourseDetails = () => {
     }
   };
 
+  const handleQuizSelect = (quizId: string) => {
+    setSelectedQuiz(quizId);
+    setActiveTab('quizzes');
+  };
+
+  const handleQuizComplete = (quizId: string, score: number, totalQuestions: number) => {
+    // Calculate percentage
+    const percentage = (score / totalQuestions) * 100;
+    
+    // Update quiz progress
+    const newProgress = { ...quizProgress };
+    newProgress[quizId] = percentage;
+    setQuizProgress(newProgress);
+    
+    // Save progress to localStorage
+    if (course) {
+      localStorage.setItem(`quiz_progress_${course.id}`, JSON.stringify(newProgress));
+    }
+    
+    // Get overall course progress
+    if (course && course.quizzes) {
+      const totalQuizzes = course.quizzes.length;
+      const completedQuizzes = Object.keys(newProgress).length;
+      const overallProgress = Math.round((completedQuizzes / totalQuizzes) * 100);
+      
+      // Update user's course progress
+      const progressData = JSON.parse(localStorage.getItem('userCourseProgress') || '{}');
+      progressData[course.id] = overallProgress;
+      localStorage.setItem('userCourseProgress', JSON.stringify(progressData));
+    }
+    
+    // Return to quizzes list after delay
+    setTimeout(() => {
+      setSelectedQuiz(null);
+    }, 3000);
+  };
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Лёгкая':
@@ -105,12 +232,21 @@ const CourseDetails = () => {
 
   const mockLessons = [
     { id: 1, title: 'Введение в курс', duration: '15 мин', isLocked: false },
-    { id: 2, title: 'Основы уязвимостей веб-приложений', duration: '45 мин', isLocked: true },
-    { id: 3, title: 'SQL-инъекции: теория', duration: '30 мин', isLocked: true },
-    { id: 4, title: 'SQL-инъекции: практика', duration: '60 мин', isLocked: true },
-    { id: 5, title: 'XSS-атаки', duration: '40 мин', isLocked: true },
-    { id: 6, title: 'CSRF и способы защиты', duration: '35 мин', isLocked: true },
+    { id: 2, title: 'Основы уязвимостей веб-приложений', duration: '45 мин', isLocked: !isPurchased },
+    { id: 3, title: 'SQL-инъекции: теория', duration: '30 мин', isLocked: !isPurchased },
+    { id: 4, title: 'SQL-инъекции: практика', duration: '60 мин', isLocked: !isPurchased },
+    { id: 5, title: 'XSS-атаки', duration: '40 мин', isLocked: !isPurchased },
+    { id: 6, title: 'CSRF и способы защиты', duration: '35 мин', isLocked: !isPurchased },
   ];
+
+  // Calculate overall course progress
+  const calculateOverallProgress = () => {
+    if (!course || !course.quizzes || course.quizzes.length === 0) return 0;
+    
+    const totalQuizzes = course.quizzes.length;
+    const completedQuizzes = Object.keys(quizProgress).length;
+    return Math.round((completedQuizzes / totalQuizzes) * 100);
+  };
 
   if (isLoading) {
     return (
@@ -183,6 +319,13 @@ const CourseDetails = () => {
                 {course.studentsCount || 0} студентов
               </Badge>
             </div>
+            
+            {isPurchased && (
+              <div className="mt-2">
+                <p className="text-sm mb-1">Ваш прогресс: {calculateOverallProgress()}%</p>
+                <Progress value={calculateOverallProgress()} className="h-2" />
+              </div>
+            )}
           </div>
           
           <div className="lg:col-span-1">
@@ -209,14 +352,24 @@ const CourseDetails = () => {
               </div>
               
               <div className="pt-2">
-                <Button 
-                  className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black gap-2"
-                  onClick={handleAddToCart}
-                  disabled={isAddingToCart}
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {isAddingToCart ? 'Добавление...' : 'Добавить в корзину'}
-                </Button>
+                {isPurchased ? (
+                  <Button 
+                    className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black gap-2"
+                    onClick={() => setActiveTab('quizzes')}
+                  >
+                    <Play className="h-4 w-4" />
+                    Пройти квизы
+                  </Button>
+                ) : (
+                  <Button 
+                    className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black gap-2"
+                    onClick={handleAddToCart}
+                    disabled={isAddingToCart}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    {isAddingToCart ? 'Добавление...' : 'Добавить в корзину'}
+                  </Button>
+                )}
               </div>
               
               <div className="pt-2">
@@ -225,6 +378,10 @@ const CourseDetails = () => {
                   <li className="flex items-center text-sm">
                     <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                     <span>{course.lessonsCount} видеоуроков</span>
+                  </li>
+                  <li className="flex items-center text-sm">
+                    <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                    <span>{course.quizzes?.length || 2} мини-квизов</span>
                   </li>
                   <li className="flex items-center text-sm">
                     <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
@@ -246,14 +403,14 @@ const CourseDetails = () => {
         
         {/* Course content */}
         <Tabs 
-          defaultValue="overview" 
           value={activeTab} 
           onValueChange={setActiveTab}
           className="mt-8"
         >
-          <TabsList className="w-full sm:w-auto grid sm:inline-grid grid-cols-3 sm:grid-cols-none">
+          <TabsList className="w-full sm:w-auto grid sm:inline-grid grid-cols-4 sm:grid-cols-none">
             <TabsTrigger value="overview">Обзор</TabsTrigger>
             <TabsTrigger value="content">Содержание</TabsTrigger>
+            <TabsTrigger value="quizzes">Квизы</TabsTrigger>
             <TabsTrigger value="reviews">Отзывы</TabsTrigger>
           </TabsList>
           
@@ -265,7 +422,7 @@ const CourseDetails = () => {
               <p>
                 В этом курсе вы изучите основные принципы тестирования на проникновение веб-приложений.
                 Вы научитесь находить и эксплуатировать наиболее распространенные уязвимости, такие как
-                SQL-инъекции, XSS, CSRF и другие из списка OWASP Top 10.
+                SQL-инъекции, XSS, CSRF �� другие из списка OWASP Top 10.
               </p>
               <p className="mt-4">
                 Курс сочетает теоретические знания с практическими лабораторными работами, что
@@ -386,9 +543,78 @@ const CourseDetails = () => {
             </div>
           </TabsContent>
           
+          <TabsContent value="quizzes" className="space-y-6">
+            {selectedQuiz ? (
+              // Show selected quiz
+              course.quizzes?.map(quiz => 
+                quiz.id === selectedQuiz && (
+                  <QuizComponent 
+                    key={quiz.id}
+                    quizId={quiz.id}
+                    title={quiz.title}
+                    questions={quiz.questions}
+                    onComplete={(score, total) => handleQuizComplete(quiz.id, score, total)}
+                  />
+                )  
+              )
+            ) : (
+              // Show list of available quizzes
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">Доступные квизы</h3>
+                {!isPurchased && (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-md mb-4">
+                    <p className="text-yellow-500">Для доступа к полному списку квизов необходимо приобрести курс</p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {course.quizzes?.map((quiz, index) => (
+                    <Card 
+                      key={quiz.id} 
+                      className={`hack-card hover:bg-hack-dark/50 transition-all ${index > 0 && !isPurchased ? 'opacity-50' : ''}`}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg flex justify-between">
+                          <span>{quiz.title}</span>
+                          {quizProgress[quiz.id] !== undefined && (
+                            <Badge variant="secondary" className="bg-green-500/20 text-green-500">
+                              {quizProgress[quiz.id]}%
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          {quiz.questions.length} вопросов
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {quizProgress[quiz.id] !== undefined ? (
+                          <>
+                            <p className="text-sm mb-2">Ваш результат: {quizProgress[quiz.id]}%</p>
+                            <Progress value={quizProgress[quiz.id]} className="h-2 mb-4" />
+                          </>
+                        ) : (
+                          <p className="text-sm mb-4">Вы еще не прошли этот квиз</p>
+                        )}
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          onClick={() => handleQuizSelect(quiz.id)}
+                          className="w-full bg-hack-blue hover:bg-hack-blue/80 text-black"
+                          disabled={index > 0 && !isPurchased}
+                        >
+                          {quizProgress[quiz.id] !== undefined ? 'Пройти снова' : 'Начать'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+          
           <TabsContent value="reviews" className="space-y-6">
             <div>
-              <h3 className="text-xl font-semibold mb-4">Отзывы студентов</h3>
+              <h3 className="text-xl font-semibold mb-4">Отзывы студен��ов</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div className="hack-card p-6">
                   <div className="flex items-center mb-3">

@@ -80,6 +80,7 @@ const UserAvatar = () => {
     localStorage.removeItem('userPurchasedCourses');
     localStorage.removeItem('userCart');
     localStorage.removeItem('userBanned');
+    localStorage.removeItem('userCourseProgress');
     
     // Also clear from userService
     userService.logoutUser();
@@ -119,13 +120,21 @@ const UserAvatar = () => {
     return name.substring(0, 2).toUpperCase();
   };
 
+  // Determine avatar background color based on account type
+  const getAvatarClass = () => {
+    if (isBanned && userType !== 'admin') return 'bg-red-900/50';
+    if (userType === 'company') return 'bg-blue-900/50';
+    if (userType === 'admin') return 'bg-purple-900/50';
+    return 'bg-muted';
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8 cursor-pointer">
             <AvatarImage src="/placeholder.svg" alt={userName} />
-            <AvatarFallback className={`${isBanned && userType !== 'admin' ? 'bg-red-900/50' : 'bg-muted'}`}>
+            <AvatarFallback className={getAvatarClass()}>
               {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
@@ -135,10 +144,12 @@ const UserAvatar = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none flex items-center gap-1.5">
-              {userType === 'company' && <Building className="h-3.5 w-3.5" />}
+              {userType === 'company' && <Building className="h-3.5 w-3.5 text-hack-blue" />}
               {userType === 'admin' && <ShieldCheck className="h-3.5 w-3.5 text-red-500" />}
+              {userType === 'hacker' && <User className="h-3.5 w-3.5 text-hack-green" />}
               {userName}
               {userType === 'admin' && <span className="text-xs text-red-500 font-bold ml-1">(Админ)</span>}
+              {userType === 'company' && <span className="text-xs text-hack-blue font-bold ml-1">(Компания)</span>}
               {isBanned && userType !== 'admin' && <span className="text-xs text-red-500 font-bold ml-1">(Заблокирован)</span>}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
@@ -155,6 +166,12 @@ const UserAvatar = () => {
           <Settings className="mr-2 h-4 w-4" />
           <span>Настройки</span>
         </DropdownMenuItem>
+        {userType === 'company' && (
+          <DropdownMenuItem onClick={() => navigate('/tasks/post')}>
+            <Building className="mr-2 h-4 w-4" />
+            <span>Создать задание</span>
+          </DropdownMenuItem>
+        )}
         {userType === 'admin' && (
           <DropdownMenuItem onClick={() => navigate('/admin')}>
             <ShieldCheck className="mr-2 h-4 w-4" />
