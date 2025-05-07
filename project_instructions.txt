@@ -1,0 +1,514 @@
+
+# Project Instructions
+
+## Database Tables Required
+
+1. **Users Table**
+   - id (PK)
+   - username
+   - email
+   - password_hash
+   - profile_image
+   - role (user, admin)
+   - created_at
+   - last_login
+
+2. **Courses Table**
+   - id (PK)
+   - title
+   - description
+   - price
+   - difficulty (Лёгкая, Средняя, Сложная)
+   - category (Web, Mobile, Crypto, OSINT, Forensics)
+   - image_url
+   - lessons_count
+   - created_at
+   - created_by (FK to Users)
+   - students_count
+   - rating
+
+3. **Course_Modules Table**
+   - id (PK)
+   - course_id (FK to Courses)
+   - title
+   - content
+   - order_number
+
+4. **Tasks Table**
+   - id (PK)
+   - title
+   - description
+   - reward
+   - difficulty
+   - category
+   - image_url
+   - created_at
+   - created_by (FK to Users)
+   - status (open, in_progress, completed)
+
+5. **User_Courses Table**
+   - id (PK)
+   - user_id (FK to Users)
+   - course_id (FK to Courses)
+   - purchased_at
+   - completion_status
+   - progress_percentage
+
+6. **User_Tasks Table**
+   - id (PK)
+   - user_id (FK to Users)
+   - task_id (FK to Tasks)
+   - started_at
+   - completed_at
+   - submission
+   - status
+   - feedback
+
+7. **Cart_Items Table**
+   - id (PK)
+   - user_id (FK to Users)
+   - course_id (FK to Courses)
+   - added_at
+
+## Converting Project to EXE Desktop Application Using Electron
+
+1. **Install Required Dependencies**
+   ```bash
+   npm install --save-dev electron electron-builder
+   ```
+
+2. **Create Electron Main Process File (electron-main.js)**
+   ```javascript
+   const { app, BrowserWindow, ipcMain } = require('electron');
+   const path = require('path');
+   const isDev = require('electron-is-dev');
+
+   let mainWindow;
+
+   function createWindow() {
+     mainWindow = new BrowserWindow({
+       width: 1200,
+       height: 800,
+       webPreferences: {
+         nodeIntegration: true,
+         contextIsolation: false,
+         preload: path.join(__dirname, 'preload.js')
+       }
+     });
+
+     mainWindow.loadURL(
+       isDev
+         ? 'http://localhost:8080'
+         : `file://${path.join(__dirname, '../dist/index.html')}`
+     );
+
+     if (isDev) {
+       mainWindow.webContents.openDevTools();
+     }
+
+     mainWindow.on('closed', () => (mainWindow = null));
+   }
+
+   app.on('ready', createWindow);
+
+   app.on('window-all-closed', () => {
+     if (process.platform !== 'darwin') {
+       app.quit();
+     }
+   });
+
+   app.on('activate', () => {
+     if (mainWindow === null) {
+       createWindow();
+     }
+   });
+   ```
+
+3. **Create Preload Script (preload.js)**
+   ```javascript
+   window.electronAPI = {
+     isElectron: true
+   };
+   ```
+
+4. **Update package.json**
+   ```json
+   {
+     "main": "electron-main.js",
+     "scripts": {
+       "start": "vite",
+       "build": "vite build",
+       "electron:dev": "concurrently \"npm run start\" \"wait-on http://localhost:8080 && electron .\"",
+       "electron:build": "npm run build && electron-builder"
+     },
+     "build": {
+       "appId": "com.hackbridge.nexushub",
+       "productName": "HackBridge Nexus Hub",
+       "files": [
+         "dist/**/*",
+         "electron-main.js",
+         "preload.js"
+       ],
+       "directories": {
+         "buildResources": "assets",
+         "output": "electron-dist"
+       },
+       "win": {
+         "target": "nsis"
+       },
+       "mac": {
+         "target": "dmg"
+       },
+       "linux": {
+         "target": "AppImage"
+       }
+     }
+   }
+   ```
+
+5. **Add Environment Detection to App**
+   - Update AppModeIndicator component to show Desktop/Browser mode
+   - Implement isElectron detection service
+
+6. **Build the Application**
+   ```bash
+   npm run electron:build
+   ```
+
+## MSSQL Database Integration Using Python with Electron
+
+1. **Setup Python with MSSQL**
+   - Install required Python packages:
+   ```bash
+   pip install pyodbc fastapi uvicorn
+   ```
+
+2. **Create Python API Server (db_server.py)**
+   ```python
+   import pyodbc
+   from fastapi import FastAPI, HTTPException
+   from pydantic import BaseModel
+   from typing import List, Optional
+   import uvicorn
+   import json
+   from datetime import datetime
+
+   app = FastAPI()
+
+   # Database connection string
+   conn_str = (
+       "DRIVER={ODBC Driver 17 for SQL Server};"
+       "SERVER=your_server_name;"
+       "DATABASE=hackbridge_db;"
+       "UID=your_username;"
+       "PWD=your_password;"
+   )
+
+   # Helper function to connect to database
+   def get_connection():
+       try:
+           return pyodbc.connect(conn_str)
+       except Exception as e:
+           print(f"Database connection error: {e}")
+           raise HTTPException(status_code=500, detail="Database connection failed")
+
+   # Models
+   class User(BaseModel):
+       id: Optional[str] = None
+       username: str
+       email: str
+       password_hash: str
+       profile_image: Optional[str] = None
+       role: str = "user"
+       created_at: Optional[str] = None
+
+   class Course(BaseModel):
+       id: Optional[str] = None
+       title: str
+       description: str
+       price: float
+       difficulty: str
+       category: str
+       image_url: str
+       lessons_count: int
+       created_at: Optional[str] = None
+       created_by: str
+       students_count: int = 0
+       rating: float = 0
+
+   # Routes
+   @app.get("/users/")
+   def get_users():
+       conn = get_connection()
+       cursor = conn.cursor()
+       cursor.execute("SELECT * FROM Users")
+       columns = [column[0] for column in cursor.description]
+       users = []
+       for row in cursor.fetchall():
+           users.append(dict(zip(columns, row)))
+       conn.close()
+       return users
+
+   @app.get("/courses/")
+   def get_courses():
+       conn = get_connection()
+       cursor = conn.cursor()
+       cursor.execute("SELECT * FROM Courses")
+       columns = [column[0] for column in cursor.description]
+       courses = []
+       for row in cursor.fetchall():
+           courses.append(dict(zip(columns, row)))
+       conn.close()
+       return courses
+
+   @app.post("/users/")
+   def create_user(user: User):
+       conn = get_connection()
+       cursor = conn.cursor()
+       timestamp = datetime.now().isoformat()
+       cursor.execute(
+           "INSERT INTO Users (username, email, password_hash, profile_image, role, created_at) "
+           "VALUES (?, ?, ?, ?, ?, ?)",
+           (user.username, user.email, user.password_hash, user.profile_image, user.role, timestamp)
+       )
+       conn.commit()
+       conn.close()
+       return {"message": "User created successfully"}
+
+   # Run the server
+   if __name__ == "__main__":
+       uvicorn.run("db_server:app", host="127.0.0.1", port=5000, reload=True)
+   ```
+
+3. **Create Python-Electron Bridge (electron-python-bridge.js)**
+   ```javascript
+   const { spawn } = require('child_process');
+   const fetch = require('node-fetch');
+   const path = require('path');
+   const { ipcMain } = require('electron');
+
+   // Path to Python executable and script
+   const pythonPath = process.env.PYTHON_PATH || 'python';
+   const scriptPath = path.join(__dirname, 'db_server.py');
+
+   // Spawn Python API server
+   let pythonProcess = null;
+
+   function startPythonServer() {
+     console.log('Starting Python server...');
+     pythonProcess = spawn(pythonPath, [scriptPath]);
+     
+     pythonProcess.stdout.on('data', (data) => {
+       console.log(`Python stdout: ${data}`);
+     });
+     
+     pythonProcess.stderr.on('data', (data) => {
+       console.error(`Python stderr: ${data}`);
+     });
+     
+     pythonProcess.on('close', (code) => {
+       console.log(`Python process exited with code ${code}`);
+       pythonProcess = null;
+     });
+   }
+
+   function stopPythonServer() {
+     if (pythonProcess) {
+       pythonProcess.kill();
+       pythonProcess = null;
+       console.log('Python server stopped');
+     }
+   }
+
+   // Setup IPC communication
+   function setupIPC() {
+     // Get all users
+     ipcMain.handle('get-users', async () => {
+       try {
+         const response = await fetch('http://127.0.0.1:5000/users/');
+         const data = await response.json();
+         return data;
+       } catch (error) {
+         console.error('Error fetching users:', error);
+         return { error: 'Failed to fetch users' };
+       }
+     });
+     
+     // Get all courses
+     ipcMain.handle('get-courses', async () => {
+       try {
+         const response = await fetch('http://127.0.0.1:5000/courses/');
+         const data = await response.json();
+         return data;
+       } catch (error) {
+         console.error('Error fetching courses:', error);
+         return { error: 'Failed to fetch courses' };
+       }
+     });
+     
+     // Create a new user
+     ipcMain.handle('create-user', async (event, userData) => {
+       try {
+         const response = await fetch('http://127.0.0.1:5000/users/', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+           },
+           body: JSON.stringify(userData),
+         });
+         const data = await response.json();
+         return data;
+       } catch (error) {
+         console.error('Error creating user:', error);
+         return { error: 'Failed to create user' };
+       }
+     });
+   }
+
+   module.exports = {
+     startPythonServer,
+     stopPythonServer,
+     setupIPC,
+   };
+   ```
+
+4. **Update main Electron file**
+   ```javascript
+   const { app, BrowserWindow, ipcMain } = require('electron');
+   const path = require('path');
+   const isDev = require('electron-is-dev');
+   const { startPythonServer, stopPythonServer, setupIPC } = require('./electron-python-bridge');
+
+   let mainWindow;
+
+   function createWindow() {
+     mainWindow = new BrowserWindow({
+       width: 1200,
+       height: 800,
+       webPreferences: {
+         nodeIntegration: true,
+         contextIsolation: false,
+         preload: path.join(__dirname, 'preload.js')
+       }
+     });
+
+     mainWindow.loadURL(
+       isDev
+         ? 'http://localhost:8080'
+         : `file://${path.join(__dirname, '../dist/index.html')}`
+     );
+
+     if (isDev) {
+       mainWindow.webContents.openDevTools();
+     }
+
+     mainWindow.on('closed', () => (mainWindow = null));
+   }
+
+   app.on('ready', () => {
+     createWindow();
+     startPythonServer();
+     setupIPC();
+   });
+
+   app.on('window-all-closed', () => {
+     stopPythonServer();
+     if (process.platform !== 'darwin') {
+       app.quit();
+     }
+   });
+
+   app.on('activate', () => {
+     if (mainWindow === null) {
+       createWindow();
+     }
+   });
+   ```
+
+5. **Update Preload Script**
+   ```javascript
+   const { contextBridge, ipcRenderer } = require('electron');
+
+   contextBridge.exposeInMainWorld('electronAPI', {
+     isElectron: true,
+     getUsers: () => ipcRenderer.invoke('get-users'),
+     getCourses: () => ipcRenderer.invoke('get-courses'),
+     createUser: (userData) => ipcRenderer.invoke('create-user', userData),
+   });
+   ```
+
+6. **Create React Service to Use the Database**
+   ```javascript
+   // In React app: src/services/databaseService.js
+   const isElectron = 'electronAPI' in window;
+
+   export const getUsers = async () => {
+     if (isElectron) {
+       return await window.electronAPI.getUsers();
+     }
+     // Fallback for web version
+     return [];
+   };
+
+   export const getCourses = async () => {
+     if (isElectron) {
+       return await window.electronAPI.getCourses();
+     }
+     // Fallback for web version
+     return [];
+   };
+
+   export const createUser = async (userData) => {
+     if (isElectron) {
+       return await window.electronAPI.createUser(userData);
+     }
+     // Fallback for web version
+     return { error: 'Not in Electron environment' };
+   };
+   ```
+
+7. **SQL Scripts to Create Database Tables**
+   ```sql
+   -- Create Users Table
+   CREATE TABLE Users (
+     id INT IDENTITY(1,1) PRIMARY KEY,
+     username NVARCHAR(255) NOT NULL,
+     email NVARCHAR(255) NOT NULL UNIQUE,
+     password_hash NVARCHAR(255) NOT NULL,
+     profile_image NVARCHAR(MAX),
+     role NVARCHAR(50) DEFAULT 'user',
+     created_at DATETIME DEFAULT GETDATE(),
+     last_login DATETIME
+   );
+
+   -- Create Courses Table
+   CREATE TABLE Courses (
+     id INT IDENTITY(1,1) PRIMARY KEY,
+     title NVARCHAR(255) NOT NULL,
+     description NVARCHAR(MAX),
+     price DECIMAL(10, 2) NOT NULL,
+     difficulty NVARCHAR(50),
+     category NVARCHAR(50),
+     image_url NVARCHAR(MAX),
+     lessons_count INT DEFAULT 0,
+     created_at DATETIME DEFAULT GETDATE(),
+     created_by INT FOREIGN KEY REFERENCES Users(id),
+     students_count INT DEFAULT 0,
+     rating DECIMAL(3, 2) DEFAULT 0
+   );
+
+   -- Create Course_Modules Table
+   CREATE TABLE Course_Modules (
+     id INT IDENTITY(1,1) PRIMARY KEY,
+     course_id INT FOREIGN KEY REFERENCES Courses(id),
+     title NVARCHAR(255) NOT NULL,
+     content NVARCHAR(MAX),
+     order_number INT
+   );
+
+   -- Create other tables as described above
+   ```
+
+8. **Building for Distribution**
+   - Package Python with PyInstaller
+   - Include bundled Python in Electron build using electron-builder
