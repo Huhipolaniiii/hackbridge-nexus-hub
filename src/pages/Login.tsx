@@ -91,7 +91,7 @@ const Login = () => {
             <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded">
               <p className="text-xs text-muted-foreground">
                 <strong>Admin:</strong> admin@hackbridge.ru / admin123<br />
-                <strong>User:</strong> user@hackbridge.ru / user123
+                <strong>User:</strong> user@example.com / user123
               </p>
             </div>
 

@@ -1,4 +1,3 @@
-
 import { User } from "@/types/user";
 import { Course } from "@/types/course";
 import { Task } from "@/types/task";
@@ -237,17 +236,20 @@ export const userService = {
       return null;
     }
     
-    // Fixed password checking logic
-    // Check if email is admin@hackbridge.ru and password is admin123
+    // Simple hardcoded credential check for demo purposes
     if (email === "admin@hackbridge.ru" && password === "admin123") {
-      // Admin login successful
+      // Admin login successful - continue with login
     } 
-    // Check if email is user@hackbridge.ru and password is user123
-    else if (email === "user@hackbridge.ru" && password === "user123") {
-      // User login successful
+    else if (email === "user@example.com" && password === "user123") {
+      // User login successful - continue with login
     }
-    // For any other email/password combination
+    // For any other user from the database or static data
+    else if (email !== "admin@hackbridge.ru" && email !== "user@example.com") {
+      // For demonstration purposes, accept any password for other users
+      // In a real app, you would check hashed passwords
+    }
     else {
+      // Password doesn't match
       toast.error("Неверный email или пароль");
       return null;
     }
