@@ -45,7 +45,21 @@ const Profile = () => {
           const userPurchasedCourses = allCourses.filter(course => 
             currentUser.purchasedCourses.includes(course.id)
           );
-          setPurchasedCourses(userPurchasedCourses);
+          
+          // Add progress info to purchased courses
+          const coursesWithProgress = userPurchasedCourses.map(course => {
+            // Calculate progress based on completed quizzes
+            const totalQuizzes = course.quizzes?.length || 0;
+            const completedQuizzes = course.quizzes?.filter(quiz => quiz.completed)?.length || 0;
+            const progressPercent = totalQuizzes > 0 ? (completedQuizzes / totalQuizzes) * 100 : 0;
+            
+            return {
+              ...course,
+              progress: progressPercent
+            };
+          });
+          
+          setPurchasedCourses(coursesWithProgress);
         }
         
         // Get completed tasks - similar to above
@@ -168,7 +182,10 @@ const Profile = () => {
                 {purchasedCourses.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {purchasedCourses.map(course => (
-                      <Card key={course.id} className="hack-card hover-scale cursor-pointer overflow-hidden">
+                      <Card key={course.id} 
+                        className="hack-card hover-scale cursor-pointer overflow-hidden" 
+                        onClick={() => window.location.href = `/course/${course.id}`}
+                      >
                         <div className="flex flex-row h-32">
                           <div 
                             className="w-32 bg-cover bg-center" 
@@ -182,8 +199,10 @@ const Profile = () => {
                               </p>
                             </div>
                             <div className="mt-2">
-                              <p className="text-xs text-muted-foreground mb-1">Прогресс: 0%</p>
-                              <Progress value={0} className="h-2" />
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Прогресс: {Math.round(course.progress || 0)}%
+                              </p>
+                              <Progress value={course.progress || 0} className="h-2" />
                             </div>
                           </div>
                         </div>

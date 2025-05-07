@@ -16,6 +16,7 @@ export interface Course {
   rating?: number;
   level?: string;
   duration?: string;
+  progress?: number;
   modules?: Array<{
     id: string;
     title: string;

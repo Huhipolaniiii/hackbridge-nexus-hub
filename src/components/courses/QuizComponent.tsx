@@ -9,6 +9,8 @@ import { userService } from '@/services/dataService';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Skill } from '@/types/user';
+import { Course } from '@/types/course';
+import { courseService } from '@/services/dataService';
 
 interface Question {
   id: string;
@@ -19,12 +21,13 @@ interface Question {
 
 interface QuizProps {
   quizId: string;
+  courseId: string;
   title: string;
   questions: Question[];
   onComplete: (score: number, totalQuestions: number) => void;
 }
 
-const QuizComponent = ({ quizId, title, questions, onComplete }: QuizProps) => {
+const QuizComponent = ({ quizId, courseId, title, questions, onComplete }: QuizProps) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -67,6 +70,9 @@ const QuizComponent = ({ quizId, title, questions, onComplete }: QuizProps) => {
         const finalScore = score + (correct ? 1 : 0);
         const percentage = (finalScore / questions.length) * 100;
         
+        // Update course quiz completion status
+        updateQuizCompletion(courseId, quizId);
+        
         // Update user skills based on quiz performance
         updateUserSkills(title, percentage);
         
@@ -74,6 +80,38 @@ const QuizComponent = ({ quizId, title, questions, onComplete }: QuizProps) => {
         onComplete(finalScore, questions.length);
       }
     }, 1500);
+  };
+  
+  const updateQuizCompletion = (courseId: string, quizId: string) => {
+    try {
+      // Get the course from courseService
+      const course = courseService.getCourseById(courseId);
+      
+      if (!course) {
+        console.error("Course not found");
+        return;
+      }
+      
+      // Mark this quiz as completed in the course
+      if (course.quizzes && course.quizzes.length > 0) {
+        const updatedQuizzes = course.quizzes.map(quiz => {
+          if (quiz.id === quizId) {
+            return { ...quiz, completed: true };
+          }
+          return quiz;
+        });
+        
+        const updatedCourse = {
+          ...course,
+          quizzes: updatedQuizzes
+        };
+        
+        // Update the course in storage
+        courseService.updateCourse(updatedCourse);
+      }
+    } catch (error) {
+      console.error("Error updating quiz completion:", error);
+    }
   };
   
   const updateUserSkills = (skillName: string, percentage: number) => {
@@ -113,7 +151,7 @@ const QuizComponent = ({ quizId, title, questions, onComplete }: QuizProps) => {
       
       // Update user data
       currentUser.skills = userSkills;
-      userService.updateUser(currentUser); // Fixed this line - using updateUser instead of updateCurrentUser
+      userService.updateUser(currentUser);
       
       toast.success(`Ваш навык "${normalizedSkill}" улучшен!`);
     } catch (error) {
