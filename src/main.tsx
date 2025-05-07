@@ -4,7 +4,7 @@ import App from './App.tsx'
 import './index.css'
 
 // Check for Electron/Desktop environment
-const isElectron = window.electronAPI !== undefined;
+const isElectron = typeof window.electronAPI !== 'undefined';
 
 // Initialize the application
 const startApp = () => {
