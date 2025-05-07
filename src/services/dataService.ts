@@ -237,10 +237,18 @@ export const userService = {
       return null;
     }
     
-    // In a real app, you would hash and compare passwords
-    // This is just a simple implementation
-    if (password !== "admin123" && password !== "user123") {
-      toast.error("Неверный пароль");
+    // Fixed password checking logic
+    // Check if email is admin@hackbridge.ru and password is admin123
+    if (email === "admin@hackbridge.ru" && password === "admin123") {
+      // Admin login successful
+    } 
+    // Check if email is user@hackbridge.ru and password is user123
+    else if (email === "user@hackbridge.ru" && password === "user123") {
+      // User login successful
+    }
+    // For any other email/password combination
+    else {
+      toast.error("Неверный email или пароль");
       return null;
     }
     
