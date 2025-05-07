@@ -3,9 +3,6 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Check if running in Electron
-const isElectron = 'electronAPI' in window;
-
 // Initialize the application
 const startApp = () => {
   const container = document.getElementById("root");
@@ -15,9 +12,6 @@ const startApp = () => {
   
   const root = createRoot(container);
   root.render(<App />);
-  
-  // Log the runtime environment
-  console.log(`Running in ${isElectron ? 'Electron' : 'browser'} mode`);
 };
 
 // Start the application
