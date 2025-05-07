@@ -60,6 +60,8 @@ const Profile = () => {
           });
           
           setPurchasedCourses(coursesWithProgress);
+        } else {
+          setPurchasedCourses([]);
         }
         
         // Get completed tasks - similar to above
@@ -169,7 +171,7 @@ const Profile = () => {
             {isCompanyAccount ? (
               <CompanyOverview user={user} />
             ) : (
-              <HackerOverview user={user} />
+              <HackerOverview user={user} purchasedCoursesCount={purchasedCourses.length} />
             )}
           </TabsContent>
           
@@ -379,7 +381,7 @@ const Profile = () => {
   );
 };
 
-const HackerOverview = ({ user }: { user: User }) => {
+const HackerOverview = ({ user, purchasedCoursesCount }: { user: User, purchasedCoursesCount: number }) => {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
