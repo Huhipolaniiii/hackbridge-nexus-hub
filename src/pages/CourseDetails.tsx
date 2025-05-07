@@ -12,6 +12,7 @@ import QuizComponent from '@/components/courses/QuizComponent';
 import { ShoppingCart, BookOpen, Clock, User, CheckCircle, Star, Play, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { userService } from '@/services/dataService';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const CourseDetails = () => {
   const { id } = useParams<{ id: string }>();

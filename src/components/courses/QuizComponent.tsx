@@ -113,7 +113,7 @@ const QuizComponent = ({ quizId, title, questions, onComplete }: QuizProps) => {
       
       // Update user data
       currentUser.skills = userSkills;
-      userService.updateCurrentUser(currentUser);
+      userService.updateUser(currentUser); // Fixed this line - using updateUser instead of updateCurrentUser
       
       toast.success(`Ваш навык "${normalizedSkill}" улучшен!`);
     } catch (error) {
