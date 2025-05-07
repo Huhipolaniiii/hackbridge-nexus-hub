@@ -9,7 +9,7 @@ const AppModeIndicator = () => {
       className="text-xs gap-1 border-blue-500 text-blue-400"
     >
       <Globe className="h-3 w-3" />
-      Browser
+      Веб версия
     </Badge>
   );
 };

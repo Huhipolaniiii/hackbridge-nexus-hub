@@ -1,0 +1,705 @@
+
+# HackBridge Nexus Hub - Database Integration Instructions
+
+## MS SQL Connection Settings
+
+```python
+# Настройки подключения к MS SQL (ИЗМЕНИТЕ ПОД СВОЮ БАЗУ!)
+connection_string = (
+    "Driver={SQL Server};"
+    "Server=ILABSQLW19S1,49172;"  # Или ваш сервер
+    "Database=HackBridge Nexus Hub;"
+    "Trusted_Connection=yes;"      # Если Windows Auth
+    # Если логин/пароль, замените на:
+    # "UID=ваш_логин;PWD=ваш_пароль;"
+)
+```
+
+## Структура базы данных
+
+-- Create Users Table with all required fields
+```sql
+CREATE TABLE Users (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    username NVARCHAR(255) NOT NULL UNIQUE,
+    email NVARCHAR(255) NOT NULL UNIQUE,
+    password_hash NVARCHAR(255) NOT NULL,
+    profile_image NVARCHAR(MAX),
+    role NVARCHAR(50) NOT NULL DEFAULT 'user',
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    last_login DATETIME2
+);
+
+-- Create Courses Table with all required fields
+CREATE TABLE Courses (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    title NVARCHAR(255) NOT NULL,
+    description NVARCHAR(MAX),
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    difficulty NVARCHAR(50) CHECK (difficulty IN ('Лёгкая', 'Средняя', 'Сложная')),
+    category NVARCHAR(50) CHECK (category IN ('Web', 'Mobile', 'Crypto', 'OSINT', 'Forensics')),
+    image_url NVARCHAR(MAX),
+    lessons_count INT NOT NULL DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by INT NOT NULL FOREIGN KEY REFERENCES Users(id),
+    students_count INT NOT NULL DEFAULT 0,
+    rating DECIMAL(3, 2) DEFAULT 0
+);
+
+-- Create Course_Modules Table
+CREATE TABLE Course_Modules (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    course_id INT NOT NULL FOREIGN KEY REFERENCES Courses(id) ON DELETE CASCADE,
+    title NVARCHAR(255) NOT NULL,
+    content NVARCHAR(MAX),
+    order_number INT NOT NULL
+);
+
+-- Create Tasks Table
+CREATE TABLE Tasks (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    title NVARCHAR(255) NOT NULL,
+    description NVARCHAR(MAX),
+    reward DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    difficulty NVARCHAR(50),
+    category NVARCHAR(50),
+    image_url NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    created_by INT NOT NULL FOREIGN KEY REFERENCES Users(id),
+    status NVARCHAR(50) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'completed'))
+);
+
+-- Create User_Courses Table
+CREATE TABLE User_Courses (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL FOREIGN KEY REFERENCES Users(id) ON DELETE CASCADE,
+    course_id INT NOT NULL FOREIGN KEY REFERENCES Courses(id) ON DELETE CASCADE,
+    purchased_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    completion_status NVARCHAR(50) NOT NULL DEFAULT 'not_started',
+    progress_percentage DECIMAL(5, 2) NOT NULL DEFAULT 0,
+    CONSTRAINT UC_User_Course UNIQUE (user_id, course_id)
+);
+
+-- Create User_Tasks Table
+CREATE TABLE User_Tasks (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL FOREIGN KEY REFERENCES Users(id) ON DELETE CASCADE,
+    task_id INT NOT NULL FOREIGN KEY REFERENCES Tasks(id) ON DELETE CASCADE,
+    started_at DATETIME2,
+    completed_at DATETIME2,
+    submission NVARCHAR(MAX),
+    status NVARCHAR(50) NOT NULL DEFAULT 'not_started',
+    feedback NVARCHAR(MAX),
+    CONSTRAINT UC_User_Task UNIQUE (user_id, task_id)
+);
+
+-- Create Cart_Items Table
+CREATE TABLE Cart_Items (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL FOREIGN KEY REFERENCES Users(id) ON DELETE CASCADE,
+    course_id INT NOT NULL FOREIGN KEY REFERENCES Courses(id) ON DELETE CASCADE,
+    added_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT UC_Cart_Item UNIQUE (user_id, course_id)
+);
+```
+
+## Desktop Application Setup with Python + Electron
+
+### 1. Python API для работы с базой данных
+
+Создайте файл `db_server.py`:
+
+```python
+import pyodbc
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+import uvicorn
+import json
+from datetime import datetime
+
+app = FastAPI()
+
+# Database connection string
+conn_str = (
+    "Driver={SQL Server};"
+    "Server=ILABSQLW19S1,49172;"  # Или ваш сервер
+    "Database=HackBridge Nexus Hub;"
+    "Trusted_Connection=yes;"      # Если Windows Auth
+    # Если логин/пароль, замените на:
+    # "UID=ваш_логин;PWD=ваш_пароль;"
+)
+
+# Helper function to connect to database
+def get_connection():
+    try:
+        return pyodbc.connect(conn_str)
+    except Exception as e:
+        print(f"Database connection error: {e}")
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+
+# Models
+class User(BaseModel):
+    id: Optional[int] = None
+    username: str
+    email: str
+    password_hash: str
+    profile_image: Optional[str] = None
+    role: str = "user"
+    created_at: Optional[str] = None
+    last_login: Optional[str] = None
+
+class Course(BaseModel):
+    id: Optional[int] = None
+    title: str
+    description: str
+    price: float
+    difficulty: str
+    category: str
+    image_url: str
+    lessons_count: int = 0
+    created_by: int
+    students_count: int = 0
+    rating: float = 0
+
+# Routes - Users
+@app.get("/users/")
+def get_users():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Users")
+    columns = [column[0] for column in cursor.description]
+    users = []
+    for row in cursor.fetchall():
+        users.append(dict(zip(columns, row)))
+    conn.close()
+    return users
+
+@app.get("/users/{user_id}")
+def get_user(user_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Users WHERE id = ?", user_id)
+    columns = [column[0] for column in cursor.description]
+    user = cursor.fetchone()
+    conn.close()
+    
+    if user:
+        return dict(zip(columns, user))
+    raise HTTPException(status_code=404, detail="User not found")
+
+@app.post("/users/")
+def create_user(user: User):
+    conn = get_connection()
+    cursor = conn.cursor()
+    timestamp = datetime.now().isoformat()
+    
+    try:
+        cursor.execute(
+            "INSERT INTO Users (username, email, password_hash, profile_image, role, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (user.username, user.email, user.password_hash, user.profile_image, user.role, timestamp)
+        )
+        conn.commit()
+        
+        # Get the newly created user ID
+        cursor.execute("SELECT @@IDENTITY")
+        user_id = cursor.fetchone()[0]
+        conn.close()
+        return {"id": user_id, "message": "User created successfully"}
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Error creating user: {str(e)}")
+
+# Routes - Courses
+@app.get("/courses/")
+def get_courses():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Courses")
+    columns = [column[0] for column in cursor.description]
+    courses = []
+    for row in cursor.fetchall():
+        courses.append(dict(zip(columns, row)))
+    conn.close()
+    return courses
+
+@app.get("/courses/{course_id}")
+def get_course(course_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Courses WHERE id = ?", course_id)
+    columns = [column[0] for column in cursor.description]
+    course = cursor.fetchone()
+    
+    if course:
+        result = dict(zip(columns, course))
+        
+        # Get course modules
+        cursor.execute("SELECT * FROM Course_Modules WHERE course_id = ? ORDER BY order_number", course_id)
+        modules_columns = [column[0] for column in cursor.description]
+        modules = []
+        for row in cursor.fetchall():
+            modules.append(dict(zip(modules_columns, row)))
+        
+        result["modules"] = modules
+        conn.close()
+        return result
+    
+    conn.close()
+    raise HTTPException(status_code=404, detail="Course not found")
+
+@app.post("/courses/")
+def create_course(course: Course):
+    conn = get_connection()
+    cursor = conn.cursor()
+    timestamp = datetime.now().isoformat()
+    
+    try:
+        cursor.execute(
+            "INSERT INTO Courses (title, description, price, difficulty, category, "
+            "image_url, lessons_count, created_at, created_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (course.title, course.description, course.price, course.difficulty, 
+             course.category, course.image_url, course.lessons_count, timestamp, course.created_by)
+        )
+        conn.commit()
+        
+        # Get the newly created course ID
+        cursor.execute("SELECT @@IDENTITY")
+        course_id = cursor.fetchone()[0]
+        conn.close()
+        return {"id": course_id, "message": "Course created successfully"}
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Error creating course: {str(e)}")
+
+# Run the server
+if __name__ == "__main__":
+    uvicorn.run("db_server:app", host="127.0.0.1", port=5000, reload=True)
+```
+
+### 2. Electron приложение для запуска UI и Python API
+
+#### Установка необходимых зависимостей:
+
+```bash
+# Electron и связанные пакеты
+npm install --save-dev electron electron-builder electron-is-dev
+
+# Пакеты для работы с Python процессом
+npm install --save-dev node-fetch cross-spawn wait-on concurrently
+```
+
+#### Файл electron-main.js:
+
+```javascript
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const isDev = require('electron-is-dev');
+const { startPythonServer, stopPythonServer, setupIPC } = require('./electron-python-bridge');
+
+let mainWindow;
+
+async function createWindow() {
+  // Создаем основное окно приложения
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
+    },
+    icon: path.join(__dirname, 'public/favicon.ico'),
+    title: 'HackBridge Nexus Hub'
+  });
+
+  // Загружаем UI из локального сервера разработки (в режиме разработки)
+  // или из скомпилированных файлов (в production)
+  mainWindow.loadURL(
+    isDev
+      ? 'http://localhost:3000'
+      : `file://${path.join(__dirname, './dist/index.html')}`
+  );
+
+  // Открываем инструменты разработчика в режиме разработки
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+  }
+
+  // Обработка закрытия окна
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+// Инициализация приложения при готовности
+app.on('ready', async () => {
+  // Запускаем Python API сервер
+  await startPythonServer();
+  
+  // Настраиваем IPC для коммуникации между UI и Python API
+  setupIPC();
+  
+  // Создаем окно приложения
+  createWindow();
+});
+
+// Закрытие приложения на всех платформах кроме MacOS
+app.on('window-all-closed', () => {
+  stopPythonServer();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// Обработка активации приложения (для MacOS)
+app.on('activate', () => {
+  if (mainWindow === null) {
+    createWindow();
+  }
+});
+```
+
+#### Файл electron-python-bridge.js:
+
+```javascript
+const { spawn } = require('child_process');
+const fetch = require('node-fetch');
+const path = require('path');
+const { ipcMain } = require('electron');
+
+// Путь к Python и скрипту
+const pythonPath = process.env.PYTHON_PATH || 'python';
+const scriptPath = path.join(__dirname, 'db_server.py');
+
+// Python API server process
+let pythonProcess = null;
+
+// Функция запуска Python API сервера
+function startPythonServer() {
+  return new Promise((resolve, reject) => {
+    console.log('Starting Python server...');
+    
+    // Запускаем Python процесс
+    pythonProcess = spawn(pythonPath, [scriptPath]);
+    
+    // Обработка стандартного вывода Python процесса
+    pythonProcess.stdout.on('data', (data) => {
+      const output = data.toString();
+      console.log(`Python stdout: ${output}`);
+      
+      // Когда увидим сообщение о запуске Uvicorn, считаем что сервер запущен
+      if (output.includes('Uvicorn running')) {
+        console.log('Python API server is running');
+        resolve();
+      }
+    });
+    
+    // Обработка ошибок Python процесса
+    pythonProcess.stderr.on('data', (data) => {
+      const error = data.toString();
+      console.error(`Python stderr: ${error}`);
+      
+      // Можно распознавать ошибки тут и отклонять промис при необходимости
+      if (error.includes('Error:') || error.includes('Exception:')) {
+        reject(new Error(`Python server error: ${error}`));
+      }
+    });
+    
+    // Обработка закрытия Python процесса
+    pythonProcess.on('close', (code) => {
+      console.log(`Python process exited with code ${code}`);
+      pythonProcess = null;
+      
+      if (code !== 0 && !pythonProcess) {
+        reject(new Error(`Python server exited with code ${code}`));
+      }
+    });
+    
+    // Таймаут на запуск сервера
+    setTimeout(() => {
+      if (pythonProcess) {
+        resolve();
+      } else {
+        reject(new Error('Python server failed to start within timeout'));
+      }
+    }, 5000);
+  });
+}
+
+// Функция остановки Python API сервера
+function stopPythonServer() {
+  if (pythonProcess) {
+    console.log('Stopping Python server...');
+    pythonProcess.kill();
+    pythonProcess = null;
+    console.log('Python server stopped');
+  }
+}
+
+// Настройка IPC для коммуникации между UI и серверной частью
+function setupIPC() {
+  // Получение всех пользователей
+  ipcMain.handle('get-users', async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/users/');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Получение пользователя по ID
+  ipcMain.handle('get-user', async (event, userId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/users/${userId}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return { error: error.message };
+    }
+  });
+  
+  // Создание нового пользователя
+  ipcMain.handle('create-user', async (event, userData) => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/users/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Получение всех курсов
+  ipcMain.handle('get-courses', async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/courses/');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      return { error: error.message };
+    }
+  });
+  
+  // Получение курса по ID
+  ipcMain.handle('get-course', async (event, courseId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/courses/${courseId}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching course ${courseId}:`, error);
+      return { error: error.message };
+    }
+  });
+  
+  // Создание нового курса
+  ipcMain.handle('create-course', async (event, courseData) => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/courses/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(courseData),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating course:', error);
+      return { error: error.message };
+    }
+  });
+}
+
+module.exports = {
+  startPythonServer,
+  stopPythonServer,
+  setupIPC,
+};
+```
+
+#### Файл preload.js:
+
+```javascript
+const { contextBridge, ipcRenderer } = require('electron');
+
+// Предоставляем API для фронтенда
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Флаг для определения запуска в Electron
+  isElectron: true,
+  
+  // Методы для работы с пользователями
+  getUsers: () => ipcRenderer.invoke('get-users'),
+  getUser: (userId) => ipcRenderer.invoke('get-user', userId),
+  createUser: (userData) => ipcRenderer.invoke('create-user', userData),
+  
+  // Методы для работы с курсами
+  getCourses: () => ipcRenderer.invoke('get-courses'),
+  getCourse: (courseId) => ipcRenderer.invoke('get-course', courseId),
+  createCourse: (courseData) => ipcRenderer.invoke('create-course', courseData),
+});
+```
+
+### 3. Настройка package.json для сборки десктопного приложения
+
+Добавьте в ваш package.json:
+
+```json
+{
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "electron:dev": "concurrently \"npm run start\" \"wait-on http://localhost:8080 && electron .\"",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.hackbridge.nexushub",
+    "productName": "HackBridge Nexus Hub",
+    "files": [
+      "dist/**/*",
+      "electron-main.js",
+      "electron-python-bridge.js",
+      "preload.js",
+      "db_server.py"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "electron-dist"
+    },
+    "extraResources": [
+      {
+        "from": "python_modules",
+        "to": "python_modules",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/favicon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/favicon.ico"
+    }
+  }
+}
+```
+
+### 4. Создание пакета Python с зависимостями
+
+1. Установите необходимые библиотеки:
+```bash
+pip install pyodbc fastapi uvicorn pydantic pyinstaller
+```
+
+2. Создайте автономный исполняемый файл Python:
+```bash
+pyinstaller --onefile db_server.py
+```
+
+### 5. Внесение изменений в React приложение
+
+Создайте сервис для работы с базой данных через предоставленный Electron API:
+
+```javascript
+// src/services/databaseService.js
+const isElectron = window.electronAPI !== undefined;
+
+export const databaseService = {
+  // Проверка доступности Electron API
+  isElectronAvailable: () => isElectron,
+  
+  // Пользователи
+  getAllUsers: async () => {
+    if (isElectron) {
+      return await window.electronAPI.getUsers();
+    }
+    // Fallback для веб-версии - используем localStorage
+    return [];
+  },
+  
+  getUserById: async (userId) => {
+    if (isElectron) {
+      return await window.electronAPI.getUser(userId);
+    }
+    return null;
+  },
+  
+  createUser: async (userData) => {
+    if (isElectron) {
+      return await window.electronAPI.createUser(userData);
+    }
+    return { error: "Electron API not available" };
+  },
+  
+  // Курсы
+  getAllCourses: async () => {
+    if (isElectron) {
+      return await window.electronAPI.getCourses();
+    }
+    return [];
+  },
+  
+  getCourseById: async (courseId) => {
+    if (isElectron) {
+      return await window.electronAPI.getCourse(courseId);
+    }
+    return null;
+  },
+  
+  createCourse: async (courseData) => {
+    if (isElectron) {
+      return await window.electronAPI.createCourse(courseData);
+    }
+    return { error: "Electron API not available" };
+  }
+};
+
+export default databaseService;
+```
+
+### 6. Сборка и упаковка приложения
+
+1. Сначала соберите React приложение:
+```bash
+npm run build
+```
+
+2. Затем соберите Electron приложение:
+```bash
+npm run electron:build
+```
+
+Готовый установщик будет находиться в папке electron-dist.
+
+## Инструкции по использованию
+
+1. Установите приложение из созданного установщика
+2. Запустите приложение
+3. В десктопной версии данные автоматически будут синхронизироваться с SQL сервером
+4. В веб-версии данные будут храниться локально в браузере
+
+## Требования для запуска
+
+1. Microsoft SQL Server с созданной базой данных
+2. Python 3.7+ с установленными библиотеками:
+   - pyodbc
+   - fastapi
+   - uvicorn
+3. Node.js для веб-версии
