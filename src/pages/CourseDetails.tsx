@@ -552,6 +552,7 @@ const CourseDetails = () => {
                   <QuizComponent 
                     key={quiz.id}
                     quizId={quiz.id}
+                    courseId={course.id} // Add the missing courseId prop
                     title={quiz.title}
                     questions={quiz.questions}
                     onComplete={(score, total) => handleQuizComplete(quiz.id, score, total)}
