@@ -1,0 +1,155 @@
+
+// Microsoft SQL Server Connection Example for Node.js
+
+/*
+To use this code, first install the mssql package:
+npm install mssql
+*/
+
+const sql = require('mssql');
+
+// Connection configuration
+const sqlConfig = {
+    user: 'your_username',  // Replace with your SQL Server username
+    password: 'your_password', // Replace with your SQL Server password
+    server: 'your_server_name_or_ip', // Replace with your SQL Server name
+    database: 'HackBridgeNexusHub',
+    options: {
+        encrypt: true, // For Azure SQL Database and SQL Server on Azure VMs
+        trustServerCertificate: false // Change to true for local dev / self-signed certificates
+    },
+    pool: {
+        max: 10,
+        min: 0,
+        idleTimeoutMillis: 30000
+    }
+};
+
+// Connection function with retry logic
+async function connectToDatabase() {
+    try {
+        console.log('Connecting to SQL Server...');
+        await sql.connect(sqlConfig);
+        console.log('Connected to SQL Server successfully!');
+        return true;
+    } catch (err) {
+        console.error('Error connecting to SQL Server:', err);
+        return false;
+    }
+}
+
+// Example query function
+async function executeQuery(query, params = []) {
+    try {
+        const pool = await sql.connect(sqlConfig);
+        const request = pool.request();
+        
+        // Add parameters if provided
+        params.forEach((param, index) => {
+            request.input(`param${index}`, param.type, param.value);
+        });
+        
+        const result = await request.query(query);
+        return result.recordset;
+    } catch (err) {
+        console.error('Error executing query:', err);
+        throw err;
+    }
+}
+
+// Example of calling a stored procedure
+async function callStoredProcedure(procedureName, params = []) {
+    try {
+        const pool = await sql.connect(sqlConfig);
+        const request = pool.request();
+        
+        // Add parameters if provided
+        params.forEach(param => {
+            request.input(param.name, param.type, param.value);
+        });
+        
+        const result = await request.execute(procedureName);
+        return result.recordset;
+    } catch (err) {
+        console.error(`Error executing stored procedure ${procedureName}:`, err);
+        throw err;
+    }
+}
+
+// Example usage:
+
+// 1. Get all users
+async function getAllUsers() {
+    return await executeQuery('SELECT * FROM Users');
+}
+
+// 2. Get user by email using stored procedure
+async function getUserByEmail(email) {
+    return await callStoredProcedure('sp_GetUserByEmail', [
+        { name: 'email', type: sql.NVarChar, value: email }
+    ]);
+}
+
+// 3. Get all courses
+async function getAllCourses() {
+    return await callStoredProcedure('sp_GetAllCourses');
+}
+
+// 4. Get course details by ID
+async function getCourseById(courseId) {
+    return await callStoredProcedure('sp_GetCourseById', [
+        { name: 'courseId', type: sql.NVarChar, value: courseId }
+    ]);
+}
+
+// 5. Purchase a course
+async function purchaseCourse(userId, courseId) {
+    return await callStoredProcedure('sp_PurchaseCourse', [
+        { name: 'userId', type: sql.NVarChar, value: userId },
+        { name: 'courseId', type: sql.NVarChar, value: courseId }
+    ]);
+}
+
+// Close the connection when the application shuts down
+async function closeDatabaseConnection() {
+    try {
+        await sql.close();
+        console.log('Database connection closed');
+    } catch (err) {
+        console.error('Error closing database connection:', err);
+    }
+}
+
+// Example of how you might use these functions in your application:
+async function main() {
+    try {
+        // Connect to the database
+        const connected = await connectToDatabase();
+        if (!connected) {
+            console.log('Failed to connect to database, exiting...');
+            return;
+        }
+        
+        // Get all users
+        const users = await getAllUsers();
+        console.log('Users:', users);
+        
+        // Get courses
+        const courses = await getAllCourses();
+        console.log('Courses:', courses);
+        
+        // Get course details
+        if (courses.length > 0) {
+            const courseDetails = await getCourseById(courses[0].id);
+            console.log('Course details:', courseDetails);
+        }
+        
+        // Close connection when done
+        await closeDatabaseConnection();
+    } catch (error) {
+        console.error('Error in main function:', error);
+    }
+}
+
+// Call the main function
+// main();

@@ -1,0 +1,352 @@
+
+-- HackBridge Nexus Hub Database Setup Script
+-- Microsoft SQL Server
+
+-- Create Database
+USE master;
+GO
+
+-- Check if database exists and drop it if it does (for clean setup)
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'HackBridgeNexusHub')
+BEGIN
+    ALTER DATABASE HackBridgeNexusHub SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE HackBridgeNexusHub;
+END
+GO
+
+-- Create the database
+CREATE DATABASE HackBridgeNexusHub;
+GO
+
+-- Use the created database
+USE HackBridgeNexusHub;
+GO
+
+-- Create Users Table
+CREATE TABLE Users (
+    id NVARCHAR(50) PRIMARY KEY,
+    username NVARCHAR(255) NOT NULL,
+    email NVARCHAR(255) NOT NULL UNIQUE,
+    password_hash NVARCHAR(255),
+    role NVARCHAR(50) NOT NULL,
+    avatar_url NVARCHAR(MAX),
+    rating FLOAT DEFAULT 0,
+    balance DECIMAL(10, 2) DEFAULT 0,
+    completed_tasks INT DEFAULT 0,
+    banned BIT DEFAULT 0,
+    created_at DATETIME2 DEFAULT GETDATE()
+);
+GO
+
+-- Create Skills Table
+CREATE TABLE Skills (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id NVARCHAR(50) NOT NULL,
+    name NVARCHAR(255) NOT NULL,
+    level INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+GO
+
+-- Create Courses Table
+CREATE TABLE Courses (
+    id NVARCHAR(50) PRIMARY KEY,
+    title NVARCHAR(255) NOT NULL,
+    description NVARCHAR(MAX),
+    price DECIMAL(10, 2) NOT NULL,
+    difficulty NVARCHAR(50),
+    category NVARCHAR(50),
+    image_url NVARCHAR(MAX),
+    lessons_count INT DEFAULT 0,
+    students_count INT DEFAULT 0,
+    rating FLOAT DEFAULT 0,
+    level NVARCHAR(50),
+    duration NVARCHAR(50),
+    created_at DATETIME2 DEFAULT GETDATE()
+);
+GO
+
+-- Create Course Categories Table (for many-to-many relationship)
+CREATE TABLE CourseCategories (
+    course_id NVARCHAR(50) NOT NULL,
+    category NVARCHAR(50) NOT NULL,
+    PRIMARY KEY (course_id, category),
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
+);
+GO
+
+-- Create Course Modules Table
+CREATE TABLE CourseModules (
+    id NVARCHAR(50) PRIMARY KEY,
+    course_id NVARCHAR(50) NOT NULL,
+    title NVARCHAR(255) NOT NULL,
+    content NVARCHAR(MAX),
+    order_number INT,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
+);
+GO
+
+-- Create User Purchased Courses Table
+CREATE TABLE UserPurchasedCourses (
+    user_id NVARCHAR(50) NOT NULL,
+    course_id NVARCHAR(50) NOT NULL,
+    purchased_date DATETIME2 DEFAULT GETDATE(),
+    progress FLOAT DEFAULT 0,
+    PRIMARY KEY (user_id, course_id),
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
+);
+GO
+
+-- Create Tasks Table
+CREATE TABLE Tasks (
+    id NVARCHAR(50) PRIMARY KEY,
+    title NVARCHAR(255) NOT NULL,
+    description NVARCHAR(MAX),
+    difficulty NVARCHAR(50),
+    category NVARCHAR(50),
+    reward DECIMAL(10, 2) DEFAULT 0,
+    company_id NVARCHAR(50) NOT NULL,
+    company_name NVARCHAR(255),
+    company_logo_url NVARCHAR(MAX),
+    status NVARCHAR(50) DEFAULT 'Открыто',
+    created_at DATETIME2 DEFAULT GETDATE()
+);
+GO
+
+-- Insert data from the current application
+
+-- Insert Users
+INSERT INTO Users (id, username, email, role, avatar_url, rating, balance, completed_tasks, banned) VALUES
+('1', 'admin', 'admin@hackbridge.ru', 'admin', '/placeholder.svg', 5, 10000, 10, 0),
+('2', 'user', 'user@example.com', 'hacker', '/placeholder.svg', 4.5, 2500, 5, 0),
+('3', 'company', 'company@example.com', 'company', '/placeholder.svg', 4.8, 50000, 0, 0),
+('hacker123', 'hacker123', 'hacker@example.com', 'hacker', NULL, 850, 45000, 12, 0);
+GO
+
+-- Insert Skills
+INSERT INTO Skills (user_id, name, level) VALUES
+-- Skills for hacker123
+('hacker123', 'Web', 8),
+('hacker123', 'Mobile', 6),
+('hacker123', 'Crypto', 4),
+('hacker123', 'OSINT', 7),
+('hacker123', 'Forensics', 5),
+-- Skills for user
+('2', 'JavaScript', 7),
+('2', 'React', 8);
+GO
+
+-- Insert Courses
+INSERT INTO Courses (id, title, description, price, difficulty, category, image_url, lessons_count, students_count, created_at) VALUES
+('1', 'Основы XSS-уязвимостей', 'Изучите основы Cross-Site Scripting (XSS) уязвимостей, методы обнаружения и эксплуатации.', 3500, 'Лёгкая', 'Web', 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070&auto=format&fit=crop', 8, 845, '2025-02-15T10:30:00Z'),
+('2', 'SQL-инъекции: от новичка до профессионала', 'Полный курс по SQL-инъекциям: теория, практика, защита и обход WAF.', 5200, 'Средняя', 'Web', 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=2034&auto=format&fit=crop', 12, 1243, '2025-01-20T14:15:00Z'),
+('3', 'LFI и RFI уязвимости в веб-приложениях', 'Как обнаружить и использовать уязвимости включения локальных и удаленных файлов.', 4800, 'Средняя', 'Web', 'https://images.unsplash.com/photo-1593720213428-28a5b9e94613?q=80&w=2021&auto=format&fit=crop', 10, 756, '2025-03-05T09:45:00Z'),
+('4', 'OSINT: Разведка на основе открытых источников', 'Техники и инструменты для сбора информации из публично доступных источников.', 4200, 'Лёгкая', 'OSINT', 'https://images.unsplash.com/photo-1590859808308-3d2d9c515b1a?q=80&w=2074&auto=format&fit=crop', 14, 1567, '2025-01-10T11:20:00Z'),
+('5', 'Криптографические уязвимости', 'Изучение слабых мест в реализациях криптографических алгоритмов и протоколов.', 6500, 'Сложная', 'Crypto', 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=2032&auto=format&fit=crop', 16, 678, '2025-02-28T16:40:00Z'),
+('6', 'Мобильная безопасность: Android', 'Анализ безопасности Android-приложений, выявление уязвимостей в мобильных приложениях.', 5800, 'Средняя', 'Mobile', 'https://images.unsplash.com/photo-1592609931095-54a2168ae893?q=80&w=2070&auto=format&fit=crop', 12, 924, '2025-03-15T13:10:00Z');
+GO
+
+-- Insert Course Categories
+INSERT INTO CourseCategories (course_id, category) VALUES
+('1', 'Web'),
+('1', 'Security'),
+('2', 'Web'),
+('2', 'Database'),
+('3', 'Web'),
+('3', 'Security'),
+('4', 'OSINT'),
+('4', 'Intelligence'),
+('5', 'Crypto'),
+('5', 'Security'),
+('6', 'Mobile'),
+('6', 'Android');
+GO
+
+-- Insert Course Modules from mockCourses
+INSERT INTO CourseModules (id, course_id, title, content, order_number) VALUES
+('m1_c1', '1', 'Introduction to Web Security', 'Overview of web security principles', 1),
+('m2_c1', '1', 'XSS Attacks', 'Understanding and preventing cross-site scripting', 2),
+('m1_c2', '2', 'Network Basics', 'Understanding network architectures', 1),
+('m2_c2', '2', 'Reconnaissance Techniques', 'Methods for gathering information about networks', 2);
+GO
+
+-- Insert User Purchased Courses
+INSERT INTO UserPurchasedCourses (user_id, course_id) VALUES
+('1', '1'),
+('1', '2'),
+('2', '1'),
+('hacker123', '1'),
+('hacker123', '3');
+GO
+
+-- Insert Tasks
+INSERT INTO Tasks (id, title, description, difficulty, category, reward, company_id, company_name, company_logo_url, status) VALUES
+('1', 'Поиск XSS в онлайн-магазине', 'Требуется обнаружить XSS-уязвимости в тестовом онлайн-магазине. Необходимо найти как минимум два различных вектора атаки.', 'Средняя', 'Web', 15000, '3', 'ИнфоСекъюрити', NULL, 'Открыто'),
+('2', 'Аудит безопасности API', 'Проведение аудита безопасности REST API нашего сервиса. Поиск уязвимостей в аутентификации и авторизации.', 'Сложная', 'Web', 30000, '3', 'ТехноЩит', NULL, 'Открыто'),
+('3', 'Анализ Android-приложения', 'Необходимо провести анализ безопасности нашего Android-приложения и выявить потенциальные уязвимости.', 'Средняя', 'Mobile', 25000, '3', 'МобильСекьюр', NULL, 'Открыто'),
+('4', 'Поиск утечек данных компании', 'Используя методы OSINT, найдите информацию о компании, которая может представлять угрозу при попадании в открытый доступ.', 'Лёгкая', 'OSINT', 12000, '2', 'ТехноЩит', NULL, 'Открыто'),
+('5', 'Криптоанализ защищенного протокола', 'Требуется провести анализ разработанного нами протокола шифрования и выявить его потенциальные слабости.', 'Сложная', 'Crypto', 40000, '4', 'КриптоТех', NULL, 'Открыто'),
+('6', 'Расследование инцидента безопасности', 'Проведите форензик-анализ предоставленного образа диска и определите способ и время проникновения злоумышленника.', 'Сложная', 'Forensics', 35000, '1', 'ИнфоСекъюрити', NULL, 'Открыто');
+GO
+
+-- Create stored procedures for common operations
+
+-- Get User By Email (for login)
+CREATE PROCEDURE sp_GetUserByEmail
+    @email NVARCHAR(255)
+AS
+BEGIN
+    SELECT u.*, 
+           (SELECT name, level 
+            FROM Skills 
+            WHERE user_id = u.id 
+            FOR JSON PATH) AS skills,
+           (SELECT course_id 
+            FROM UserPurchasedCourses 
+            WHERE user_id = u.id 
+            FOR JSON PATH) AS purchasedCourses
+    FROM Users u
+    WHERE u.email = @email;
+END
+GO
+
+-- Get All Courses
+CREATE PROCEDURE sp_GetAllCourses
+AS
+BEGIN
+    SELECT c.*, 
+           (SELECT category 
+            FROM CourseCategories 
+            WHERE course_id = c.id 
+            FOR JSON PATH) AS categories
+    FROM Courses c
+    ORDER BY c.created_at DESC;
+END
+GO
+
+-- Get Course By ID
+CREATE PROCEDURE sp_GetCourseById
+    @courseId NVARCHAR(50)
+AS
+BEGIN
+    SELECT c.*, 
+           (SELECT category 
+            FROM CourseCategories 
+            WHERE course_id = c.id 
+            FOR JSON PATH) AS categories,
+           (SELECT id, title, content, order_number 
+            FROM CourseModules 
+            WHERE course_id = c.id 
+            ORDER BY order_number 
+            FOR JSON PATH) AS modules
+    FROM Courses c
+    WHERE c.id = @courseId;
+END
+GO
+
+-- Get All Tasks
+CREATE PROCEDURE sp_GetAllTasks
+AS
+BEGIN
+    SELECT *
+    FROM Tasks
+    ORDER BY created_at DESC;
+END
+GO
+
+-- Purchase Course
+CREATE PROCEDURE sp_PurchaseCourse
+    @userId NVARCHAR(50),
+    @courseId NVARCHAR(50)
+AS
+BEGIN
+    BEGIN TRANSACTION;
+    
+    DECLARE @coursePrice DECIMAL(10, 2);
+    DECLARE @userBalance DECIMAL(10, 2);
+    
+    -- Get course price
+    SELECT @coursePrice = price
+    FROM Courses
+    WHERE id = @courseId;
+    
+    -- Get user balance
+    SELECT @userBalance = balance
+    FROM Users
+    WHERE id = @userId;
+    
+    -- Check if user can afford the course
+    IF @userBalance < @coursePrice
+    BEGIN
+        ROLLBACK;
+        RAISERROR('Insufficient balance', 16, 1);
+        RETURN;
+    END
+    
+    -- Update user balance
+    UPDATE Users
+    SET balance = balance - @coursePrice
+    WHERE id = @userId;
+    
+    -- Add course to user's purchased courses
+    INSERT INTO UserPurchasedCourses (user_id, course_id)
+    VALUES (@userId, @courseId);
+    
+    -- Update course students count
+    UPDATE Courses
+    SET students_count = students_count + 1
+    WHERE id = @courseId;
+    
+    COMMIT;
+END
+GO
+
+-- Add example indexes for performance
+CREATE INDEX IX_Users_Email ON Users(email);
+CREATE INDEX IX_Skills_UserId ON Skills(user_id);
+CREATE INDEX IX_Courses_Category ON Courses(category);
+CREATE INDEX IX_Tasks_Category ON Tasks(category);
+CREATE INDEX IX_Tasks_CompanyId ON Tasks(company_id);
+
+-- SQL Server connection example for Node.js using mssql package:
+/*
+const sql = require('mssql');
+
+const config = {
+    user: 'your_username',
+    password: 'your_password',
+    server: 'your_server',
+    database: 'HackBridgeNexusHub',
+    options: {
+        encrypt: true, // For Azure SQL
+        trustServerCertificate: false // Change to true for local dev
+    }
+};
+
+async function connectAndQuery() {
+    try {
+        await sql.connect(config);
+        const result = await sql.query`SELECT * FROM Users`;
+        console.log(result);
+    } catch (err) {
+        console.error('SQL error', err);
+    }
+}
+
+// To call a stored procedure:
+async function callStoredProcedure() {
+    try {
+        await sql.connect(config);
+        const request = new sql.Request();
+        request.input('email', sql.NVarChar, 'user@example.com');
+        const result = await request.execute('sp_GetUserByEmail');
+        console.log(result.recordset);
+    } catch (err) {
+        console.error('SQL error', err);
+    }
+}
+*/
+
+PRINT 'HackBridge Nexus Hub database setup completed successfully!';
+GO
