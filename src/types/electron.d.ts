@@ -1,12 +1,10 @@
 
+// Define empty interface for backward compatibility with existing code
 interface ElectronAPI {
   isElectron: boolean;
-  getUsers?: () => Promise<any[]>;
-  getCourses?: () => Promise<any[]>;
-  createUser?: (userData: any) => Promise<any>;
-  // Add other API methods as needed
 }
 
+// Ensure window.electronAPI is defined as optional but doesn't break web mode
 interface Window {
   electronAPI?: ElectronAPI;
 }

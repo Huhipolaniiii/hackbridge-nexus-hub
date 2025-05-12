@@ -3,19 +3,14 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Check for Electron/Desktop environment more safely
-const isElectron = window.electronAPI !== undefined;
-
-// Initialize the application
+// Initialize the application in web-only mode
 const startApp = () => {
   const container = document.getElementById("root");
   if (!container) {
     throw new Error("Root element not found");
   }
   
-  console.log("App environment:", isElectron ? "Desktop (Electron)" : "Web Browser");
-
-  // In the web version, we use localStorage
+  console.log("App environment: Web Browser");
   console.log("Using localStorage for data storage (web mode)");
   
   const root = createRoot(container);
